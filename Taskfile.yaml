@@ -1,0 +1,79 @@
+version: '3'
+
+vars:
+  IMAGE_NAME: geostake
+  CONTAINER_NAME: geostake
+  HOST_PORT: '8080'
+
+tasks:
+  install:
+    desc: Install project dependencies
+    cmds:
+      - npm install
+
+  dev:
+    desc: Start the Vite development server
+    cmds:
+      - npm run dev
+
+  test:
+    desc: Run the test suite once
+    cmds:
+      - npm test
+
+  test:watch:
+    desc: Run the test suite in watch mode
+    cmds:
+      - npm run test:watch
+
+  typecheck:
+    desc: Run the TypeScript type checker
+    cmds:
+      - npm run typecheck
+
+  lint:
+    desc: Lint the codebase with ESLint
+    cmds:
+      - npm run lint
+
+  format:
+    desc: Format the codebase with Prettier
+    cmds:
+      - npm run format
+
+  build:
+    desc: Build the production bundle
+    cmds:
+      - npm run build
+
+  preview:
+    desc: Build and preview the production bundle
+    deps:
+      - build
+    cmds:
+      - npm run preview
+
+  clean:
+    desc: Remove build artifacts
+    cmds:
+      - npm run clean
+
+  docker:build:
+    desc: Build the production container image
+    cmds:
+      - docker build --tag {{.IMAGE_NAME}} .
+
+  docker:up:
+    desc: Build, start, and expose the production container on port {{.HOST_PORT}}
+    deps:
+      - docker:build
+    cmds:
+      - cmd: docker rm --force {{.CONTAINER_NAME}} 2>/dev/null || true
+        ignore_error: true
+      - docker run --detach --name {{.CONTAINER_NAME}} --publish {{.HOST_PORT}}:8080 {{.IMAGE_NAME}}
+
+  docker:down:
+    desc: Stop and remove the production container
+    cmds:
+      - cmd: docker rm --force {{.CONTAINER_NAME}}
+        ignore_error: true
