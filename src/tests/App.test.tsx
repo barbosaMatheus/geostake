@@ -20,4 +20,11 @@ describe('App', () => {
       ),
     ).toBeInTheDocument()
   })
+
+  it('renders the initial player resources', () => {
+    render(<App />)
+
+    expect(screen.getByText('Geodes')).toBeInTheDocument()
+    expect(screen.getByText('Lives')).toBeInTheDocument()
+  })
 })

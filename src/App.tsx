@@ -1,11 +1,8 @@
-import GameTitle from './components/GameTitle'
+import GameScreen from './components/GameScreen'
+import { MOCK_COUNTRIES } from './data/mockCountries'
 
 function App() {
-  return (
-    <main className="app">
-      <GameTitle />
-    </main>
-  )
+  return <GameScreen countries={MOCK_COUNTRIES} />
 }
 
 export default App

@@ -8,9 +8,12 @@ life. The game runs fully offline once loaded, with no backend.
 
 > How much information are you willing to buy before making your guess?
 
-This repository currently contains the Phase 0 scaffolding: a clean, runnable
-Vite + React + TypeScript app that displays the GeoStake title. No game
-functionality is implemented yet.
+GeoStake is currently in early development. The first playable game screen is
+implemented: it shows your geodes and lives, a mystery country with a starting
+clue, a country-name guess input, guess feedback, and a way to start the next
+turn. A small temporary mock country dataset powers the interface. The clue
+purchasing system, geode economy, persistence, real country dataset, and PWA
+support are not implemented yet.
 
 ## Technology Stack
 
