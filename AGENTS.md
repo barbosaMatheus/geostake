@@ -811,6 +811,81 @@ Do not allow the README to describe an outdated application.
 
 ---
 
+## 27.1 Changelog and Semantic Versioning
+
+This project follows **Semantic Versioning (SemVer)** and maintains a `CHANGELOG.md`.
+
+Agents MUST treat versioning and changelog maintenance as part of normal development.
+
+### Version Format
+
+Use:
+
+```text
+MAJOR.MINOR.PATCH
+```
+
+Determine the appropriate version bump based on the overall impact of the changes:
+
+* **PATCH** — Backward-compatible bug fixes, corrections, or small internal improvements that do not add new user-facing functionality.
+* **MINOR** — New backward-compatible functionality, features, UI capabilities, or meaningful enhancements.
+* **MAJOR** — Breaking changes, removal of existing functionality, incompatible changes to established behavior, or changes that require users to significantly change how they use the application.
+
+When multiple types of changes are included, use the highest applicable version bump. For example, a feature plus a bug fix is a **MINOR** release; a breaking change plus new features is a **MAJOR** release.
+
+During the project's `0.x.x` development period, continue to apply these rules intelligently. Do not use the pre-1.0 status as an excuse to arbitrarily change versions.
+
+### Version Updates
+
+When a change warrants a version bump:
+
+1. Determine whether the change is PATCH, MINOR, or MAJOR.
+2. Update the project's application version in the appropriate project file(s).
+3. Keep all version references consistent where the project maintains more than one version source.
+4. Do not manually change dependency versions unless required by the task.
+5. Do not bump the version for changes that do not meaningfully alter the application, such as purely internal agent/tooling work, unless the project already treats those changes as releases.
+
+For this React/Vite application, prefer the project's existing version source rather than introducing a second source of truth. If the application version is represented in `package.json` and surfaced through React code, keep those values synchronized.
+
+### CHANGELOG.md
+
+Update `CHANGELOG.md` whenever a change represents a meaningful project release or user-visible change.
+
+Use a human-readable, chronologically ordered changelog with the newest version first.
+
+Group changes under appropriate categories such as:
+
+* Added
+* Changed
+* Fixed
+* Removed
+* Deprecated
+
+Keep entries concise and focused on what changed from the user's perspective.
+
+Do not add meaningless entries for every individual file modification.
+
+When releasing a new version:
+
+1. Add the new version to `CHANGELOG.md`.
+2. Include the release date.
+3. Summarize the notable changes under the appropriate categories.
+4. Ensure the changelog version matches the application version.
+5. Ensure the version bump accurately reflects the changes.
+
+### Agent Responsibility
+
+Before considering a feature or bug-fix task complete, agents should ask:
+
+* Did this change warrant a version bump?
+* If so, is the bump PATCH, MINOR, or MAJOR?
+* Does `CHANGELOG.md` need an entry?
+* Are all project version references consistent?
+
+Agents should use judgment rather than blindly bumping the version for every commit or task.
+
+---
+
 # Source and Licensing Requirements
 
 ## 28. Preserve Data Attribution and Licensing Information
