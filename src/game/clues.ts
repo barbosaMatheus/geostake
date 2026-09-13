@@ -73,6 +73,9 @@ export function revealClue(
   clueId: ClueId,
   costMultiplier: number = CLUE_COST_MULTIPLIER,
 ): GameState {
+  if (state.guessResult !== null) {
+    return state
+  }
   if (state.revealedClueIds.includes(clueId)) {
     return state
   }

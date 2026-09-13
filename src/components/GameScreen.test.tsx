@@ -1,9 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import { GAME_CONFIG } from '../game/config'
 import { TEST_COUNTRIES } from '../tests/fixtures'
 import GameScreen from './GameScreen'
 
 const alwaysSelectFirst = () => 0
+
+const manualContinueConfig = { ...GAME_CONFIG, continueOnCorrectGuess: false }
 
 function getGuessControls() {
   return {
@@ -70,8 +73,30 @@ describe('GameScreen', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('shows positive feedback and reveals the country on a correct guess', () => {
+  it('automatically starts a new turn after a correct guess by default', () => {
     render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
+    const { guessInput, submitButton } = getGuessControls()
+
+    fireEvent.change(guessInput, { target: { value: TEST_COUNTRIES[0].name } })
+    fireEvent.click(submitButton)
+
+    expect(
+      screen.getByText(/submit a guess to see the result/i),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/was brazil/i)).not.toBeInTheDocument()
+    expect(getGuessControls().guessInput).toBeEnabled()
+    expect(screen.getAllByText('Starting clue')).toHaveLength(1)
+    expect(screen.getByText('1000')).toBeInTheDocument()
+  })
+
+  it('shows positive feedback and waits for the player when auto-advance is disabled', () => {
+    render(
+      <GameScreen
+        countries={TEST_COUNTRIES}
+        random={alwaysSelectFirst}
+        config={manualContinueConfig}
+      />,
+    )
     const { guessInput, submitButton } = getGuessControls()
 
     fireEvent.change(guessInput, { target: { value: TEST_COUNTRIES[0].name } })
@@ -83,6 +108,35 @@ describe('GameScreen', () => {
       screen.getByRole('button', { name: /start next turn/i }),
     ).toBeInTheDocument()
     expect(submitButton).toBeDisabled()
+  })
+
+  it('disables clue purchases while a solved turn waits for the next round', () => {
+    render(
+      <GameScreen
+        countries={TEST_COUNTRIES}
+        random={alwaysSelectFirst}
+        config={manualContinueConfig}
+      />,
+    )
+    const { guessInput, submitButton } = getGuessControls()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Region · 50 geodes' }))
+    expect(screen.getByText('South America')).toBeInTheDocument()
+    expect(screen.getByText('950')).toBeInTheDocument()
+
+    fireEvent.change(guessInput, { target: { value: TEST_COUNTRIES[0].name } })
+    fireEvent.click(submitButton)
+
+    expect(
+      screen.getByRole('button', { name: /start next turn/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('South America')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Land Area · Free' }),
+    ).toBeDisabled()
+    expect(
+      screen.getByText(/clue purchases are disabled until the next turn/i),
+    ).toBeInTheDocument()
   })
 
   it('shows negative feedback and reduces lives on an incorrect guess', () => {

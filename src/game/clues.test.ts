@@ -229,6 +229,14 @@ describe('revealClue', () => {
 
     expect(next.revealedClueIds).toContain(state.startingClueId)
   })
+
+  it('does not reveal clues after the turn has been resolved', () => {
+    const state = applyGuess(firstState(), 'Atlantis')
+    const next = revealClue(state, 'region')
+
+    expect(next).toBe(state)
+    expect(next.revealedClueIds).not.toContain('region')
+  })
 })
 
 describe('clue state across turns', () => {

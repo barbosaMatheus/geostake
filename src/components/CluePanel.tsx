@@ -15,6 +15,7 @@ interface CluePanelProps {
   geodes: GeodeAmount
   startingClueId: ClueId
   revealedClueIds: readonly ClueId[]
+  disabled?: boolean
   onReveal: (clueId: ClueId) => void
 }
 
@@ -23,6 +24,7 @@ function CluePanel({
   geodes,
   startingClueId,
   revealedClueIds,
+  disabled = false,
   onReveal,
 }: CluePanelProps) {
   const tiers = getClueTiers(CLUES)
@@ -30,6 +32,11 @@ function CluePanel({
   return (
     <section className="section-card clue-panel" aria-label="Clues">
       <h2 className="section-title">Clues</h2>
+      {disabled && (
+        <p className="clue-panel-locked">
+          Clue purchases are disabled until the next turn begins.
+        </p>
+      )}
       {tiers.map((tier) => (
         <ClueTierBlock
           key={tier}
@@ -38,6 +45,7 @@ function CluePanel({
           geodes={geodes}
           startingClueId={startingClueId}
           revealedClueIds={revealedClueIds}
+          disabled={disabled}
           onReveal={onReveal}
         />
       ))}
@@ -51,6 +59,7 @@ interface ClueRowProps {
   geodes: GeodeAmount
   startingClueId: ClueId
   revealedClueIds: readonly ClueId[]
+  disabled?: boolean
   onReveal: (clueId: ClueId) => void
 }
 
@@ -60,6 +69,7 @@ function ClueTierBlock({
   geodes,
   startingClueId,
   revealedClueIds,
+  disabled,
   onReveal,
 }: Omit<ClueRowProps, 'clue'> & { tier: ClueTier }) {
   const clues = getCluesForTier(tier, CLUES)
@@ -76,6 +86,7 @@ function ClueTierBlock({
             geodes={geodes}
             startingClueId={startingClueId}
             revealedClueIds={revealedClueIds}
+            disabled={disabled}
             onReveal={onReveal}
           />
         ))}
@@ -90,6 +101,7 @@ function ClueRow({
   geodes,
   startingClueId,
   revealedClueIds,
+  disabled = false,
   onReveal,
 }: ClueRowProps) {
   const isStartingClue = clue.id === startingClueId
@@ -134,18 +146,19 @@ function ClueRow({
   ]
     .filter(Boolean)
     .join(' ')
+  const purchaseDisabled = disabled || !affordable
 
   return (
     <li className={className}>
       <button
         className="clue-buy-button"
         type="button"
-        disabled={!affordable}
+        disabled={purchaseDisabled}
         onClick={() => onReveal(clue.id)}
       >
         {clue.label} · {cost === 0 ? 'Free' : `${cost} geodes`}
       </button>
-      {!affordable && (
+      {!affordable && !disabled && (
         <span className="clue-unaffordable-message">Not enough geodes</span>
       )}
     </li>

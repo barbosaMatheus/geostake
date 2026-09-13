@@ -138,6 +138,12 @@ body {
   margin-top: 1rem;
 }
 
+.clue-panel-locked {
+  margin: 0 0 1rem;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
 .clue-tier + .clue-tier {
   margin-top: 1rem;
 }

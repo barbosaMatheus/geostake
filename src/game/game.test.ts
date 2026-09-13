@@ -8,6 +8,7 @@ import {
   createInitialGameState,
   isCorrectGuess,
   normalizeCountryName,
+  resolveGuess,
   startNextTurn,
 } from './game'
 
@@ -201,5 +202,78 @@ describe('startNextTurn', () => {
     expect(next.revealedClueIds[0]).toBe(next.startingClueId)
     expect(next.revealedClueIds).not.toContain('region')
     expect(next.player.geodes).toBe(withPurchasedClue.player.geodes)
+  })
+})
+
+describe('resolveGuess', () => {
+  it('automatically advances to the next turn on a correct guess by default', () => {
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    const next = resolveGuess(
+      state,
+      TEST_COUNTRIES[0].name,
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+
+    expect(next.guessResult).toBeNull()
+    expect(next.turn).toBe(2)
+    expect(next.revealedClueIds).toHaveLength(1)
+    expect(next.player.geodes).toBe(GAME_CONFIG.startingGeodes)
+    expect(next.player.lives).toBe(GAME_CONFIG.startingLives)
+    expect(next.mysteryCountry).toBe(TEST_COUNTRIES[0])
+  })
+
+  it('does not auto-advance when continueOnCorrectGuess is disabled', () => {
+    const config = { ...GAME_CONFIG, continueOnCorrectGuess: false }
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    const next = resolveGuess(
+      state,
+      TEST_COUNTRIES[0].name,
+      TEST_COUNTRIES,
+      config,
+      alwaysSelectFirst,
+    )
+
+    expect(next.guessResult?.outcome).toBe('correct')
+    expect(next.turn).toBe(1)
+    expect(next.startingClueId).toBe(state.startingClueId)
+  })
+
+  it('does not auto-advance on an incorrect guess', () => {
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    const next = resolveGuess(state, 'Atlantis', TEST_COUNTRIES)
+
+    expect(next.guessResult?.outcome).toBe('incorrect')
+    expect(next.turn).toBe(1)
+  })
+
+  it('is a no-op once the turn has already been resolved', () => {
+    const state = resolveGuess(
+      createInitialGameState(TEST_COUNTRIES, GAME_CONFIG, alwaysSelectFirst),
+      'Atlantis',
+      TEST_COUNTRIES,
+    )
+    const again = resolveGuess(
+      state,
+      TEST_COUNTRIES[0].name,
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+
+    expect(again).toBe(state)
   })
 })

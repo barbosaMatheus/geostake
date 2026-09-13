@@ -1,3 +1,4 @@
+import { GAME_CONFIG, type GameConfig } from '../game/config'
 import { useGame } from '../hooks/useGame'
 import type { Country } from '../types/country'
 import CluePanel from './CluePanel'
@@ -9,15 +10,22 @@ import StatusBar from './StatusBar'
 
 interface GameScreenProps {
   countries: readonly Country[]
+  config?: GameConfig
   random?: () => number
 }
 
-function GameScreen({ countries, random }: GameScreenProps) {
+function GameScreen({
+  countries,
+  config = GAME_CONFIG,
+  random,
+}: GameScreenProps) {
   const { gameState, submitGuess, startNextTurn, revealClue } = useGame(
     countries,
+    config,
     random,
   )
   const { player, mysteryCountry, guessResult } = gameState
+  const turnResolved = guessResult !== null
 
   return (
     <main className="app">
@@ -32,9 +40,10 @@ function GameScreen({ countries, random }: GameScreenProps) {
         geodes={player.geodes}
         startingClueId={gameState.startingClueId}
         revealedClueIds={gameState.revealedClueIds}
+        disabled={turnResolved}
         onReveal={revealClue}
       />
-      <GuessForm disabled={guessResult !== null} onSubmit={submitGuess} />
+      <GuessForm disabled={turnResolved} onSubmit={submitGuess} />
       <GuessFeedback guessResult={guessResult} onNextTurn={startNextTurn} />
     </main>
   )

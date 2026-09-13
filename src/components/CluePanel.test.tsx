@@ -11,6 +11,7 @@ function renderPanel(options?: {
   geodes?: number
   startingClueId?: ClueId
   revealedClueIds?: readonly ClueId[]
+  disabled?: boolean
 }) {
   const onReveal = vi.fn()
   render(
@@ -19,6 +20,7 @@ function renderPanel(options?: {
       geodes={options?.geodes ?? 1000}
       startingClueId={options?.startingClueId ?? 'population'}
       revealedClueIds={options?.revealedClueIds ?? ['population']}
+      disabled={options?.disabled}
       onReveal={onReveal}
     />,
   )
@@ -98,5 +100,27 @@ describe('CluePanel', () => {
     expect(
       screen.queryByRole('button', { name: 'Population · Free' }),
     ).not.toBeInTheDocument()
+  })
+
+  it('disables every purchase while the panel is locked', () => {
+    renderPanel({ geodes: 1000, disabled: true })
+
+    expect(
+      screen.getByRole('button', { name: 'Region · 50 geodes' }),
+    ).toBeDisabled()
+    expect(
+      screen.getByRole('button', { name: 'Land Area · Free' }),
+    ).toBeDisabled()
+    expect(
+      screen.getByText(/clue purchases are disabled until the next turn/i),
+    ).toBeInTheDocument()
+  })
+
+  it('keeps revealed values visible while the panel is locked', () => {
+    renderPanel({ disabled: true })
+
+    expect(screen.getByText('Population')).toBeInTheDocument()
+    expect(screen.getByText('221,359,387')).toBeInTheDocument()
+    expect(screen.getByText('Starting clue')).toBeInTheDocument()
   })
 })

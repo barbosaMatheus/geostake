@@ -4,7 +4,27 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
-## [0.3.0] - 2026-09-13
+## [0.3.1] - 2026-09-13
+
+### Fixed
+
+- After correctly guessing the mystery country, the game now automatically
+  advances to the next turn instead of leaving the player on the solved puzzle
+  where they could continue buying clues.
+- Clue purchases are now disabled whenever a turn has been resolved (guessed)
+  until the next turn begins, both in the UI and in the underlying
+  `revealClue` game logic.
+
+### Added
+
+- Centralized `continueOnCorrectGuess` setting in `GAME_CONFIG` (default
+  `true`). When enabled, a correct guess immediately starts the next turn;
+  when disabled, the turn stays open on the feedback screen and clue
+  purchasing remains disabled until the next round starts. A future settings
+  menu can expose this value.
+
+[0.3.1]: https://github.com/barbosaMatheus/geostake
+[0.3.0]: https://github.com/barbosaMatheus/geostake
 
 ### Added
 

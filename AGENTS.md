@@ -1103,6 +1103,8 @@ Turn-state conventions:
 * At the start of a turn exactly one available tier-0 clue is randomly selected and auto-revealed; population is the final fallback.
 * A clue whose optional data is missing for the current country is never purchasable.
 * A revealed clue cannot be purchased again; revealing is a no-op when the clue is already revealed, unavailable, or unaffordable.
+* A resolved turn (one where a guess has already been made) is closed to further clue purchases: `revealClue` is a no-op while `guessResult` is set, and the UI disables the clue panel. Clue purchasing resumes when the next turn starts.
+* `GAME_CONFIG.continueOnCorrectGuess` (default `true`) controls whether a correct guess automatically starts the next turn via `resolveGuess`. When `false`, a correct guess leaves the turn resolved on the feedback screen instead of auto-advancing. A future settings menu may surface this value.
 * Starting a new turn resets the revealed-clue state to the new starting clue only.
 
 Random selection points (country choice, starting clue) accept an injectable `random: () => number` dependency for deterministic tests. Prefer the shared helpers in `src/game/random.ts` (`randomIndex`, `pickRandom`).

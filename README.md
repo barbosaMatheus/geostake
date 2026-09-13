@@ -40,6 +40,20 @@ modes change only that value. Clue tiers and definitions are data-driven, so
 additional tiers (5, 6, ...) and clues can be added without restructuring the
 system. Clue rules live in pure, unit-tested functions in `src/game/clues.ts`.
 
+## Game Configuration
+
+Game rules that are not clue data live in `src/game/config.ts` under
+`GAME_CONFIG`:
+
+| Setting                  | Default | Description                                                                                                                                                                            |
+| ------------------------ | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `startingGeodes`         | `1000`  | Geodes the player begins a game with.                                                                                                                                                  |
+| `startingLives`          | `3`     | Lives the player begins a game with.                                                                                                                                                   |
+| `continueOnCorrectGuess` | `true`  | When enabled, a correct guess immediately starts the next turn. When disabled, the turn stays open on the feedback screen and clue purchases are disabled until the next round starts. |
+
+This is centralized configuration, not yet user-configurable in the UI; a
+settings menu is planned for a later phase.
+
 ## Country Data
 
 GeoStake ships with a static canonical country dataset at

@@ -60,6 +60,26 @@ export function applyGuess(state: GameState, guessedName: string): GameState {
   return { ...state, player, guessResult }
 }
 
+export function resolveGuess(
+  state: GameState,
+  guessedName: string,
+  countries: readonly Country[],
+  config: GameConfig = GAME_CONFIG,
+  random: () => number = Math.random,
+): GameState {
+  if (state.guessResult !== null) {
+    return state
+  }
+  const afterGuess = applyGuess(state, guessedName)
+  if (
+    config.continueOnCorrectGuess &&
+    afterGuess.guessResult?.outcome === 'correct'
+  ) {
+    return startNextTurn(afterGuess, countries, random)
+  }
+  return afterGuess
+}
+
 export function startNextTurn(
   state: GameState,
   countries: readonly Country[],
