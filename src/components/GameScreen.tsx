@@ -12,12 +12,14 @@ interface GameScreenProps {
   countries: readonly Country[]
   config?: GameConfig
   random?: () => number
+  onExit?: () => void
 }
 
 function GameScreen({
   countries,
   config = GAME_CONFIG,
   random,
+  onExit,
 }: GameScreenProps) {
   const {
     gameState,
@@ -32,6 +34,13 @@ function GameScreen({
 
   return (
     <main className="app">
+      {onExit && (
+        <div className="game-nav">
+          <button className="button-secondary" type="button" onClick={onExit}>
+            Back to Landing
+          </button>
+        </div>
+      )}
       <GameTitle />
       <StatusBar
         player={player}

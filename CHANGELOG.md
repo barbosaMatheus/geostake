@@ -4,6 +4,30 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.7.0] - 2026-09-13
+
+### Added
+
+- A **landing screen** as the default application view, with GeoStake
+  branding, a _New Game_ button that starts a fresh game, a _Continue Game_
+  button, and a _Settings_ button.
+- A **Settings** screen placeholder with a heading, a note that settings
+  functionality will come later, and a _Back to Landing_ control.
+- A _Back to Landing_ control on the game screen that returns to the menu
+  without touching gameplay logic.
+- Strongly typed view-state navigation (`AppView` in
+  `src/navigation/views.ts`); no router dependency was introduced.
+- Application version bumped to `0.7.0`.
+
+### Changed
+
+- The application now opens on the landing screen instead of dropping
+  directly into the game.
+- **Continue Game** is visible but disabled until persistence is implemented
+  (planned for the next phase).
+
+[0.7.0]: https://github.com/barbosaMatheus/geostake
+
 ## [0.6.0] - 2026-09-13
 
 ### Added

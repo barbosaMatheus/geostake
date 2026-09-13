@@ -313,6 +313,17 @@ Do not add Redux, Zustand, or another state-management library simply because it
 
 Keep the architecture simple until complexity demonstrates a need for additional infrastructure.
 
+## 9.1 Screen Navigation Is Plain View State
+
+The application has no router. Screen-to-screen navigation is a single `AppView` state (`'landing' | 'game' | 'settings'`) owned by `App` (`src/navigation/views.ts` is the single source of the view union — do not scatter string literals for views through components).
+
+Conventions:
+
+* Create one screen component per view in `src/components` (`LandingScreen`, `GameScreen`, `SettingsScreen`). `App` switches on the `AppView` union and passes typed callbacks (`onNewGame`, `onSettings`, `onBack`, `onExit`) rather than raw setters.
+* `GameScreen` accepts an optional `onExit` callback; when provided it renders a *Back to Landing* control. Never let navigation state live inside `useGame` or game logic.
+* The landing screen's **Continue Game** button stays disabled until persistence is implemented (Phase 6.2). Do not add storage or resume behavior in earlier phases.
+* Do not introduce React Router (or a similar dependency) unless the app genuinely needs URL-based routing; view state is sufficient for the current scope.
+
 ---
 
 # Data Engineering

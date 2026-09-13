@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { GAME_CONFIG } from '../game/config'
 import { TEST_COUNTRIES } from '../tests/fixtures'
 import GameScreen from './GameScreen'
@@ -22,6 +22,9 @@ describe('GameScreen', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: /geostake/i }),
     ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /back to landing/i }),
+    ).toBeNull()
     expect(screen.getByText('Geodes')).toBeInTheDocument()
     expect(screen.getByText('Lives')).toBeInTheDocument()
     expect(screen.getByText('1000')).toBeInTheDocument()
@@ -33,6 +36,22 @@ describe('GameScreen', () => {
     expect(
       screen.getByText(/submit a guess to see the result/i),
     ).toBeInTheDocument()
+  })
+
+  it('offers a back-to-landing control when an exit handler is provided', () => {
+    const onExit = vi.fn()
+    render(
+      <GameScreen
+        countries={TEST_COUNTRIES}
+        random={alwaysSelectFirst}
+        onExit={onExit}
+      />,
+    )
+
+    const backButton = screen.getByRole('button', { name: /back to landing/i })
+    fireEvent.click(backButton)
+
+    expect(onExit).toHaveBeenCalledTimes(1)
   })
 
   it('starts a turn with exactly one randomly provided starting clue revealed', () => {

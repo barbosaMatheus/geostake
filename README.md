@@ -8,16 +8,38 @@ life. The game runs fully offline once loaded, with no backend.
 
 > How much information are you willing to buy before making your guess?
 
-GeoStake is currently in early development. A playable game screen is
-implemented: it shows your geodes, lives, and turn, a mystery country, a tiered
-clue area, a country-name guess input, guess feedback, a reward for correctly
-solving a turn, and a way to start the next turn. The application is powered by
-a canonical country dataset generated from the public-domain CIA World
-Factbook. Clues are revealed automatically and purchased with geodes according
-to a centralized cost multiplier, and correct guesses award geodes according to
-a tier-weighted reward system, including two visual clues that render the
-mystery country's outline and flag from locally bundled data. Persistence,
-difficulty modes, and PWA support are not implemented yet.
+GeoStake is currently in early development. The application opens on a
+**landing screen** with a _New Game_ button (which starts a fresh game), a
+_Continue Game_ button (present but disabled until persistence arrives), and a
+_Settings_ button (currently a placeholder). The game itself is a single
+screen showing your geodes, lives, and turn, a mystery country, a tiered clue
+area, a country-name guess input, guess feedback, a reward for correctly
+solving a turn, and a way to start the next turn. A _Back to Landing_ control
+returns to the menu at any time. The application is powered by a canonical
+country dataset generated from the public-domain CIA World Factbook. Clues are
+revealed automatically and purchased with geodes according to a centralized
+cost multiplier, and correct guesses award geodes according to a tier-weighted
+reward system, including two visual clues that render the mystery country's
+outline and flag from locally bundled data. Persistence (Continue Game),
+difficulty modes, reconfigurable settings, and PWA support are not implemented
+yet.
+
+## App Structure and Navigation
+
+The application uses simple, strongly typed view state rather than a router.
+There are three views, each a small focused component:
+
+| View             | Description                                                                                |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| `LandingScreen`  | Default view. GeoStake branding, **New Game**, **Continue Game** (disabled), **Settings**. |
+| `GameScreen`     | The full gameplay screen, plus a _Back to Landing_ control.                                |
+| `SettingsScreen` | Placeholder page with a _Back to Landing_ control.                                         |
+
+`App` owns a single `AppView` state (`'landing' | 'game' | 'settings'`,
+defined in `src/navigation/views.ts`) starting at `'landing'` and switches
+between views without a router, so every _New Game_ mounts a fresh game. Game
+logic is untouched by navigation and remains in `src/game`, `src/hooks`, and
+the individual screen components.
 
 ## Clue System
 

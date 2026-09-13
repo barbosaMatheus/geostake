@@ -69,6 +69,39 @@ body {
   text-align: center;
 }
 
+.game-nav {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.landing-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  width: 100%;
+  max-width: 22rem;
+  margin: clamp(1.75rem, 5vw, 3rem) auto 0;
+}
+
+.landing-menu button {
+  width: 100%;
+  font-size: 1.1rem;
+  padding: 0.95rem 1.5rem;
+}
+
+.settings-note {
+  margin: 1.25rem auto 0;
+  max-width: 30rem;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.settings-screen button {
+  display: block;
+  margin: 2rem auto 0;
+}
+
 .section-title {
   margin: 0 0 0.5rem;
   font-size: 1.05rem;
@@ -446,6 +479,11 @@ body {
 
 .button-secondary:hover:not(:disabled) {
   filter: brightness(1.05);
+}
+
+.button-secondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .button-danger {
