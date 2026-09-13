@@ -240,9 +240,12 @@ describe('GameScreen', () => {
     expect(buyButton).toBeDisabled()
   })
 
-  it('shows game over and offers a fresh turn when lives run out', () => {
+  it('resets the game after confirmation when lives run out', () => {
     render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
     const { guessInput, submitButton } = getGuessControls()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Region · 50 geodes' }))
+    expect(screen.getByText('950')).toBeInTheDocument()
 
     fireEvent.change(guessInput, { target: { value: 'Atlantis' } })
     fireEvent.click(submitButton)
@@ -256,15 +259,29 @@ describe('GameScreen', () => {
       screen.getByText(/the mystery country was brazil/i),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: /begin next turn/i }),
+      screen.getByRole('button', { name: /start new game/i }),
     ).toBeInTheDocument()
     expect(getGuessControls().guessInput).toBeDisabled()
     expect(
-      screen.getByRole('button', { name: 'Region · 50 geodes' }),
+      screen.getByRole('button', { name: 'Capital · 250 geodes' }),
     ).toBeDisabled()
-    expect(screen.getByText('1000')).toBeInTheDocument()
+    expect(screen.getByText('950')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: /begin next turn/i }))
+    fireEvent.click(screen.getByRole('button', { name: /start new game/i }))
+    expect(
+      screen.getByRole('button', { name: /confirm new game/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /begin next turn/i }),
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(
+      screen.getByRole('button', { name: /start new game/i }),
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /start new game/i }))
+    fireEvent.click(screen.getByRole('button', { name: /confirm new game/i }))
 
     expect(screen.getByText('1000')).toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument()

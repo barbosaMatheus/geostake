@@ -251,7 +251,7 @@ describe('startNextTurn', () => {
     expect(next.player.geodes).toBe(resolved.player.geodes)
   })
 
-  it('preserves geodes and restores lives when the player runs out of lives', () => {
+  it('resets to a fresh game when the player runs out of lives', () => {
     const state = createInitialGameState(
       TEST_COUNTRIES,
       GAME_CONFIG,
@@ -268,10 +268,10 @@ describe('startNextTurn', () => {
 
     const next = startNextTurn(lost, TEST_COUNTRIES, alwaysSelectFirst)
 
-    expect(next.turn).toBe(2)
+    expect(next.turn).toBe(1)
     expect(next.guessResult).toBeNull()
     expect(next.player.lives).toBe(ECONOMY_CONFIG.startingLives)
-    expect(next.player.geodes).toBe(withClue.player.geodes)
+    expect(next.player.geodes).toBe(ECONOMY_CONFIG.startingGeodes)
     expect(next.purchasedClueIds).toEqual([])
   })
 })

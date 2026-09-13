@@ -4,6 +4,19 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.5.1] - 2026-09-13
+
+### Changed
+
+- Running out of lives now completely resets the game to the beginning after
+  the player confirms: geodes, lives, and turn all return to their starting
+  values instead of carrying accumulated geodes into an incremented turn.
+- The game-over screen now asks for confirmation ("Confirm New Game" / "Cancel")
+  before starting over.
+- Application version bumped to `0.5.1`.
+
+[0.5.1]: https://github.com/barbosaMatheus/geostake
+
 ## [0.5.0] - 2026-09-13
 
 ### Added

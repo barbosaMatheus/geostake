@@ -1107,7 +1107,7 @@ Turn-state conventions:
 * Only a correct guess resolves a turn with a reward (`guessResult` outcome `'correct'`, including `geodesAwarded`). An incorrect guess deducts a life and leaves the turn open while lives remain: the same mystery country stays active, clue purchases remain available, and the player can guess again.
 * The transient "not-quite" feedback after an incorrect guess is UI state (`lastIncorrectGuess` on `useGame`), not part of `GameState`; it is cleared by the next guess, a correct guess, or running out of lives.
 * A resolved turn (one ended by a correct guess) is closed to further clue purchases: `revealClue` is a no-op while `guessResult` is set, and the UI disables the clue panel. Clue purchasing resumes when the next turn starts.
-* Running out of lives (`lives === 0`) closes the turn with an `'incorrect'` `GuessResult`: the UI locks the guess input and clue panel and reveals the country ("Out of lives. The mystery country was [name]."). `startNextTurn` then begins the next turn with restored lives while preserving the player's accumulated geodes (the economy is not reset).
+* Running out of lives (`lives === 0`) closes the turn with an `'incorrect'` `GuessResult`: the UI locks the guess input and clue panel and reveals the country ("Out of lives. The mystery country was [name]."). Starting a new game then requires explicit player confirmation and resets the game to a fresh start (`createInitialGameState`: starting geodes, starting lives, turn 1).
 * `GAME_CONFIG.continueOnCorrectGuess` (default `true`) controls whether a correct guess automatically starts the next turn via `resolveGuess`. When `false`, a correct guess leaves the turn resolved on the feedback screen instead of auto-advancing. A future settings menu may surface this value.
 * Starting a new turn resets the revealed/purchased clue state to the new starting clue only.
 
@@ -1142,7 +1142,7 @@ Reward rules:
 State split:
 
 * `GameState` separates player state (`player.geodes`, `player.lives` — carried across turns) from turn state (`mysteryCountry`, `startingClueId`, `revealedClueIds`, `purchasedClueIds`, `guessResult` — reset each turn).
-* `startNextTurn` resets the turn state, selects a new country, and preserves geodes and lives. When the previous turn was lost to zero lives, lives are restored to `startingLives` and accumulated geodes are preserved (the economy is not reset).
+* After a correctly solved turn, `startNextTurn` resets only the turn state and selects a new country, preserving the player's geodes and lives across turns. When the previous turn was lost to zero lives, `startNextTurn` instead resets the entire game to a fresh start (starting geodes, starting lives, turn 1), always behind an explicit player confirmation in the UI.
 
 Life purchases:
 

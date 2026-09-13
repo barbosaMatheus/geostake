@@ -90,7 +90,7 @@ export function resolveGuess(
     config.continueOnCorrectGuess &&
     afterGuess.guessResult?.outcome === 'correct'
   ) {
-    return startNextTurn(afterGuess, countries, random, config.economy)
+    return startNextTurn(afterGuess, countries, random, config)
   }
   return afterGuess
 }
@@ -99,7 +99,7 @@ export function startNextTurn(
   state: GameState,
   countries: readonly Country[],
   random: () => number = Math.random,
-  economy: EconomyConfig = ECONOMY_CONFIG,
+  config: GameConfig = GAME_CONFIG,
 ): GameState {
   if (state.guessResult === null && state.player.lives > 0) {
     return state
@@ -107,15 +107,15 @@ export function startNextTurn(
   if (countries.length === 0) {
     throw new Error('Cannot start a new turn without any countries')
   }
-  const lives =
-    state.player.lives > 0 ? state.player.lives : economy.startingLives
+  if (state.player.lives <= 0) {
+    return createInitialGameState(countries, config, random)
+  }
   const mysteryCountry = selectMysteryCountry(countries, random)
   const startingClueId = selectStartingClue(mysteryCountry, random)
   return {
     ...state,
     turn: state.turn + 1,
     mysteryCountry,
-    player: { ...state.player, lives },
     guessResult: null,
     startingClueId,
     revealedClueIds: [startingClueId],

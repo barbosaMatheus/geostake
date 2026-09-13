@@ -59,7 +59,7 @@ export function useGame(
     if (current.guessResult === null && current.player.lives > 0) {
       return
     }
-    setGameState(advanceTurn(current, countries, random, config.economy))
+    setGameState(advanceTurn(current, countries, random, config))
     setLastIncorrectGuess(null)
   }, [countries, config, random])
 

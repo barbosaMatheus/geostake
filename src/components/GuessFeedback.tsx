@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { GuessResult, LastIncorrectGuess } from '../types/guess'
 
 interface GuessFeedbackProps {
@@ -15,6 +16,8 @@ function GuessFeedback({
   countryName,
   onNextTurn,
 }: GuessFeedbackProps) {
+  const [confirmingNewGame, setConfirmingNewGame] = useState(false)
+
   if (lives === 0) {
     return (
       <section
@@ -25,13 +28,37 @@ function GuessFeedback({
         <p className="guess-feedback-game-over">
           Out of lives. The mystery country was {countryName}.
         </p>
-        <button
-          className="button-primary next-turn-button"
-          type="button"
-          onClick={onNextTurn}
-        >
-          Begin Next Turn
-        </button>
+        {confirmingNewGame ? (
+          <div className="game-over-confirm">
+            <p className="game-over-confirm-note">
+              This resets your geodes, lives, and turn to the start of the game.
+            </p>
+            <div className="game-over-actions">
+              <button
+                className="button-danger"
+                type="button"
+                onClick={onNextTurn}
+              >
+                Confirm New Game
+              </button>
+              <button
+                className="button-secondary"
+                type="button"
+                onClick={() => setConfirmingNewGame(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            className="button-primary next-turn-button"
+            type="button"
+            onClick={() => setConfirmingNewGame(true)}
+          >
+            Start New Game
+          </button>
+        )}
       </section>
     )
   }

@@ -90,11 +90,11 @@ Gameplay state is split into player state (geodes, lives, carried across turns)
 and turn state (mystery country, revealed clues, purchased clues, guess
 result). Correct guesses award geodes; incorrect guesses cost one life and keep
 the turn open. A correct guess ends the turn. Running out of lives also ends
-the turn without a reward and reveals the country; the next turn keeps your
-accumulated geodes and restores lives to `startingLives`. You can buy a life at
-any time during an active turn for `lifeCost` geodes (respecting `maxLives` and
-never going into negative geodes). Economy rules are pure, unit-tested
-functions in `src/game/economy.ts`.
+the turn without a reward and reveals the country; starting a new game after
+that requires confirmation and resets everything — geodes, lives, and turn — to
+their starting values. You can buy a life at any time during an active turn for
+`lifeCost` geodes (respecting `maxLives` and never going into negative geodes).
+Economy rules are pure, unit-tested functions in `src/game/economy.ts`.
 
 ## Country Data
 
