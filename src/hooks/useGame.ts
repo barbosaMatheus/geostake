@@ -17,9 +17,10 @@ export function useGame(
   countries: readonly Country[],
   config: GameConfig = GAME_CONFIG,
   random?: () => number,
+  initialGameState?: GameState | null,
 ) {
-  const [gameState, setGameState] = useState<GameState>(() =>
-    createInitialGameState(countries, config, random),
+  const [gameState, setGameState] = useState<GameState>(
+    () => initialGameState ?? createInitialGameState(countries, config, random),
   )
   const [lastIncorrectGuess, setLastIncorrectGuess] =
     useState<LastIncorrectGuess | null>(null)

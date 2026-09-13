@@ -10,36 +10,60 @@ life. The game runs fully offline once loaded, with no backend.
 
 GeoStake is currently in early development. The application opens on a
 **landing screen** with a _New Game_ button (which starts a fresh game), a
-_Continue Game_ button (present but disabled until persistence arrives), and a
+_Continue Game_ button (enabled whenever a saved game exists), and a
 _Settings_ button (currently a placeholder). The game itself is a single
 screen showing your geodes, lives, and turn, a mystery country, a tiered clue
 area, a country-name guess input, guess feedback, a reward for correctly
 solving a turn, and a way to start the next turn. A _Back to Landing_ control
-returns to the menu at any time. The application is powered by a canonical
-country dataset generated from the public-domain CIA World Factbook. Clues are
-revealed automatically and purchased with geodes according to a centralized
-cost multiplier, and correct guesses award geodes according to a tier-weighted
-reward system, including two visual clues that render the mystery country's
-outline and flag from locally bundled data. Persistence (Continue Game),
-difficulty modes, reconfigurable settings, and PWA support are not implemented
-yet.
+returns to the menu at any time. The current game is saved locally, so
+refreshing or reopening the app lets you continue where you left off. The
+application is powered by a canonical country dataset generated from the
+public-domain CIA World Factbook. Clues are revealed automatically and
+purchased with geodes according to a centralized cost multiplier, and correct
+guesses award geodes according to a tier-weighted reward system, including two
+visual clues that render the mystery country's outline and flag from locally
+bundled data. Difficulty modes, reconfigurable settings, and PWA support are
+not implemented yet.
 
 ## App Structure and Navigation
 
 The application uses simple, strongly typed view state rather than a router.
 There are three views, each a small focused component:
 
-| View             | Description                                                                                |
-| ---------------- | ------------------------------------------------------------------------------------------ |
-| `LandingScreen`  | Default view. GeoStake branding, **New Game**, **Continue Game** (disabled), **Settings**. |
-| `GameScreen`     | The full gameplay screen, plus a _Back to Landing_ control.                                |
-| `SettingsScreen` | Placeholder page with a _Back to Landing_ control.                                         |
+| View             | Description                                                                                                  |
+| ---------------- | ------------------------------------------------------------------------------------------------------------ |
+| `LandingScreen`  | Default view. GeoStake branding, **New Game**, **Continue Game** (enabled when a save exists), **Settings**. |
+| `GameScreen`     | The full gameplay screen, plus a _Back to Landing_ control.                                                  |
+| `SettingsScreen` | Placeholder page with a _Back to Landing_ control.                                                           |
 
 `App` owns a single `AppView` state (`'landing' | 'game' | 'settings'`,
 defined in `src/navigation/views.ts`) starting at `'landing'` and switches
-between views without a router, so every _New Game_ mounts a fresh game. Game
-logic is untouched by navigation and remains in `src/game`, `src/hooks`, and
-the individual screen components.
+between views without a router. Game logic is untouched by navigation and
+remains in `src/game`, `src/hooks`, and the individual screen components.
+
+## Game Persistence
+
+The active game is saved to `localStorage` under a single versioned key
+(`geostake:saved-game`) so the player can continue after a refresh or app
+restart. Saving happens through a small typed persistence layer in
+`src/persistence` rather than touching `localStorage` from components:
+
+- `storage.ts` — a thin `StorageAdapter` (with a `localStorage` implementation)
+  plus safe typed JSON `readJson`/`writeJson` helpers that degrade to "no data"
+  on missing or malformed values.
+- `savedGame.ts` — the saved-game shape, serialization/restoration, and
+  validation. The mystery country is stored by its stable country `id` and
+  resolved against the canonical dataset on load, so outdated or unknown ids
+  are treated as "no saved game".
+
+A save is written whenever meaningful game state changes: starting a new game
+or turn, guessing, losing a life, revealing/purchasing a clue, buying a life,
+or receiving a reward. Rendering or unrelated UI state never triggers a write.
+The save is removed when the current game ends (out of lives), since a game
+with zero lives cannot be played further; starting a fresh game then works
+without confirmation. When a save already exists, the landing screen's
+**Continue Game** resumes it, and **New Game** asks for confirmation before
+replacing it. No statistics, settings, or account data are persisted.
 
 ## Clue System
 

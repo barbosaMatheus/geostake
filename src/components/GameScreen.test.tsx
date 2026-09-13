@@ -1,6 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { GAME_CONFIG } from '../game/config'
+import { createInitialGameState } from '../game/game'
+import { loadResumableGame, saveGame } from '../persistence/savedGame'
+import { createMemoryStorage } from '../tests/memoryStorage'
 import { TEST_COUNTRIES } from '../tests/fixtures'
 import GameScreen from './GameScreen'
 
@@ -308,5 +311,53 @@ describe('GameScreen', () => {
       screen.getByText(/submit a guess to see the result/i),
     ).toBeInTheDocument()
     expect(getGuessControls().guessInput).toBeEnabled()
+  })
+
+  it('resumes from a saved initial game state without clobbering the save', () => {
+    const storage = createMemoryStorage()
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    state.player.geodes = 1150
+    saveGame(state, storage)
+
+    render(
+      <GameScreen
+        countries={TEST_COUNTRIES}
+        random={alwaysSelectFirst}
+        initialGameState={state}
+        storage={storage}
+      />,
+    )
+
+    expect(screen.getByText('1150')).toBeInTheDocument()
+    expect(loadResumableGame(TEST_COUNTRIES, storage)?.player.geodes).toBe(1150)
+
+    fireEvent.click(screen.getByRole('button', { name: /buy life/i }))
+
+    expect(loadResumableGame(TEST_COUNTRIES, storage)?.player.geodes).toBe(400)
+  })
+
+  it('persists gameplay changes while playing', async () => {
+    const storage = createMemoryStorage()
+    render(
+      <GameScreen
+        countries={TEST_COUNTRIES}
+        random={alwaysSelectFirst}
+        storage={storage}
+      />,
+    )
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /capital · 250 geodes/i }),
+    )
+
+    await waitFor(() => {
+      const game = loadResumableGame(TEST_COUNTRIES, storage)
+      expect(game?.purchasedClueIds).toEqual(['capital'])
+      expect(game?.player.geodes).toBe(750)
+    })
   })
 })

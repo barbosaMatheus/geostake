@@ -4,6 +4,36 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.0] - 2026-09-13
+
+### Added
+
+- Local persistence for the active game via `localStorage`, so refreshing or
+  reopening the app lets the player continue where they left off.
+- A small typed persistence layer in `src/persistence` (`storage.ts` for the
+  safe storage adapter and JSON helpers, `savedGame.ts` for the versioned
+  saved-game shape, validation, and save/load/clear logic). The mystery
+  country is stored by its stable id and resolved against the canonical
+  dataset on load; corrupt, malformed, or incompatible stored data is safely
+  treated as "no saved game".
+- **Continue Game** is now enabled on the landing screen whenever a valid
+  saved game exists and resumes that game when clicked.
+- **New Game** asks for confirmation before replacing an existing saved game;
+  cancelling leaves the save untouched.
+- Saving on meaningful game-state changes (starting a game/turn, guessing,
+  losing a life, purchasing/revealing a clue, buying a life, awards). The
+  saved game is cleared when the game ends (out of lives).
+- An in-memory storage adapter (`src/tests/memoryStorage.ts`) for
+  deterministic persistence tests.
+- Application version bumped to `0.8.0`.
+
+### Changed
+
+- `GameScreen` now runs on the persistent-game hook and accepts an optional
+  `initialGameState` and `storage` for tests and continuation.
+
+[0.8.0]: https://github.com/barbosaMatheus/geostake
+
 ## [0.7.1] - 2026-09-13
 
 ### Changed

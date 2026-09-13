@@ -1,6 +1,8 @@
 import { GAME_CONFIG, type GameConfig } from '../game/config'
-import { useGame } from '../hooks/useGame'
+import { usePersistentGame } from '../hooks/usePersistentGame'
+import type { StorageAdapter } from '../persistence/storage'
 import type { Country } from '../types/country'
+import type { GameState } from '../types/game'
 import CluePanel from './CluePanel'
 import GameTitle from './GameTitle'
 import GuessFeedback from './GuessFeedback'
@@ -13,6 +15,8 @@ interface GameScreenProps {
   config?: GameConfig
   random?: () => number
   onExit?: () => void
+  initialGameState?: GameState | null
+  storage?: StorageAdapter
 }
 
 function GameScreen({
@@ -20,6 +24,8 @@ function GameScreen({
   config = GAME_CONFIG,
   random,
   onExit,
+  initialGameState,
+  storage,
 }: GameScreenProps) {
   const {
     gameState,
@@ -28,7 +34,7 @@ function GameScreen({
     revealClue,
     purchaseLife,
     lastIncorrectGuess,
-  } = useGame(countries, config, random)
+  } = usePersistentGame(countries, config, random, initialGameState, storage)
   const { player, mysteryCountry, guessResult } = gameState
   const turnResolved = guessResult !== null || player.lives === 0
 

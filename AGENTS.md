@@ -321,7 +321,7 @@ Conventions:
 
 * Create one screen component per view in `src/components` (`LandingScreen`, `GameScreen`, `SettingsScreen`). `App` switches on the `AppView` union and passes typed callbacks (`onNewGame`, `onSettings`, `onBack`, `onExit`) rather than raw setters.
 * `GameScreen` accepts an optional `onExit` callback; when provided it renders a *Back to Landing* control. Never let navigation state live inside `useGame` or game logic.
-* The landing screen's **Continue Game** button stays disabled until persistence is implemented (Phase 6.2). Do not add storage or resume behavior in earlier phases.
+* The landing screen's **Continue Game** button is enabled only when a valid saved game exists (`hasSavedGame` prop computed by `App` from the persistence layer, never by the screen itself). Reaching the landing screen always rechecks the save so the button reflects the latest game.
 * Do not introduce React Router (or a similar dependency) unless the app genuinely needs URL-based routing; view state is sufficient for the current scope.
 
 ---
@@ -571,6 +571,22 @@ Persistence utilities should handle:
 Never assume that data retrieved from `localStorage` is valid.
 
 Treat persisted data as untrusted external input and validate it before using it.
+
+## 16.1 Game Persistence Conventions
+
+GeoStake's active-game persistence lives in `src/persistence/`:
+
+* `storage.ts` — a dependency-free `StorageAdapter` type (`getItem`/`setItem`/`removeItem`), a `localStorageAdapter` implementation that never throws (returns "no data" when storage is unavailable), and typed `readJson`/`writeJson` helpers. Components never call `localStorage` directly.
+* `savedGame.ts` — the single centralized storage key (`SAVED_GAME_KEY`), the versioned `SavedGameState`/`SavedGuessResult` shapes, `serializeGameState`/`restoreGameState`, the validator `isSavedGameState`, and the `saveGame`/`loadSavedGame`/`loadResumableGame`/`clearSavedGame`/`savedGameExists` functions. Persistence is separate from core game logic (`src/game`) and from React.
+
+Rules:
+
+* Persist the mystery country by its stable `id`, not the full `Country` object; resolve it against the canonical dataset when restoring. Treat an unknown stored id as "no saved game".
+* `isSavedGameState` must reject incompatible data: wrong `version`, non-finite/negative resources, lives beyond `maxLives`, unknown clue ids, a starting clue that is not revealed, purchased clues that are not revealed, and a correct `GuessResult` whose `countryId` does not match the mystery country.
+* `saveGame` refuses to store a game over (zero lives); it clears the saved game instead, since an ended game cannot be played further. Do not persist career statistics or settings.
+* Saving is triggered by meaningful state changes only. `usePersistentGame` (in `src/hooks`) wraps `useGame` and writes on game-state changes, skipping the initial write when resuming so a loaded save is never clobbered on mount.
+* The active game is written after: starting a new game or turn, guessing, losing a life, revealing/purchasing a clue, buying a life, and awarding a reward.
+* Tests cover round-trips, missing/malformed/incompatible data, the game-over clear, continue behavior, and the New Game replace-confirmation flow. Storage-dependent tests should use the in-memory adapter from `src/tests/memoryStorage.ts` rather than depending on shared `localStorage`.
 
 ---
 

@@ -1,11 +1,24 @@
 const appName = import.meta.env.VITE_APP_NAME ?? 'GeoStake'
 
 interface LandingScreenProps {
+  hasSavedGame: boolean
+  confirmingNewGame: boolean
   onNewGame: () => void
+  onContinueGame: () => void
+  onConfirmNewGame: () => void
+  onCancelNewGame: () => void
   onSettings: () => void
 }
 
-function LandingScreen({ onNewGame, onSettings }: LandingScreenProps) {
+function LandingScreen({
+  hasSavedGame,
+  confirmingNewGame,
+  onNewGame,
+  onContinueGame,
+  onConfirmNewGame,
+  onCancelNewGame,
+  onSettings,
+}: LandingScreenProps) {
   return (
     <div className="app landing-screen">
       <header>
@@ -17,17 +30,50 @@ function LandingScreen({ onNewGame, onSettings }: LandingScreenProps) {
         </p>
       </header>
 
-      <nav className="landing-menu" aria-label="Main menu">
-        <button className="button-primary" type="button" onClick={onNewGame}>
-          New Game
-        </button>
-        <button className="button-secondary" type="button" disabled>
-          Continue Game
-        </button>
-        <button className="button-secondary" type="button" onClick={onSettings}>
-          Settings
-        </button>
-      </nav>
+      {confirmingNewGame ? (
+        <section className="landing-confirm" aria-label="Confirm new game">
+          <p className="landing-confirm-note">
+            A saved game already exists. Starting a new game will replace it.
+          </p>
+          <div className="game-over-actions">
+            <button
+              className="button-danger"
+              type="button"
+              onClick={onConfirmNewGame}
+            >
+              Replace &amp; Start New Game
+            </button>
+            <button
+              className="button-secondary"
+              type="button"
+              onClick={onCancelNewGame}
+            >
+              Cancel
+            </button>
+          </div>
+        </section>
+      ) : (
+        <nav className="landing-menu" aria-label="Main menu">
+          <button className="button-primary" type="button" onClick={onNewGame}>
+            New Game
+          </button>
+          <button
+            className="button-secondary"
+            type="button"
+            disabled={!hasSavedGame}
+            onClick={onContinueGame}
+          >
+            Continue Game
+          </button>
+          <button
+            className="button-secondary"
+            type="button"
+            onClick={onSettings}
+          >
+            Settings
+          </button>
+        </nav>
+      )}
     </div>
   )
 }
