@@ -1,8 +1,8 @@
 import GameScreen from './components/GameScreen'
-import { MOCK_COUNTRIES } from './data/mockCountries'
+import { COUNTRIES } from './data/countries'
 
 function App() {
-  return <GameScreen countries={MOCK_COUNTRIES} />
+  return <GameScreen countries={COUNTRIES} />
 }
 
 export default App

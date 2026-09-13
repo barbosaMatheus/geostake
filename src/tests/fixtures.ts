@@ -1,0 +1,35 @@
+import type { Country } from '../types/country'
+
+export const TEST_COUNTRIES: readonly Country[] = [
+  {
+    id: 'br',
+    name: 'Brazil',
+    population: 221359387,
+    landAreaKm2: 8358140,
+    region: 'South America',
+    hemisphere: 'Southern-Western',
+    populationDensity: 26.48,
+    capital: 'Brasília',
+    nationalColors: ['green', 'yellow', 'blue'],
+    flag: 'assets/flags/BR.svg',
+    outline: 'assets/outlines/BR.svg',
+    startingClue: 'Its land area is approximately 8,358,140 square kilometers.',
+  },
+  {
+    id: 'ja',
+    name: 'Japan',
+    population: 123201945,
+    landAreaKm2: 364485,
+    region: 'Asia',
+    hemisphere: 'Northern-Eastern',
+    populationDensity: 338.02,
+    capital: 'Tokyo',
+    coastlineKm: 29751,
+    highestElevationM: 3776,
+    internetCountryCode: '.jp',
+    nationalColors: ['red', 'white'],
+    flag: 'assets/flags/JA.svg',
+    outline: 'assets/outlines/JA.svg',
+    startingClue: 'It lies in the Northern-Eastern hemisphere.',
+  },
+]

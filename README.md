@@ -11,9 +11,68 @@ life. The game runs fully offline once loaded, with no backend.
 GeoStake is currently in early development. The first playable game screen is
 implemented: it shows your geodes and lives, a mystery country with a starting
 clue, a country-name guess input, guess feedback, and a way to start the next
-turn. A small temporary mock country dataset powers the interface. The clue
-purchasing system, geode economy, persistence, real country dataset, and PWA
-support are not implemented yet.
+turn. The application is powered by a canonical country dataset generated from
+the public-domain CIA World Factbook. The clue purchasing system, geode
+economy, persistence, country flag/outline assets, and PWA support are not
+implemented yet.
+
+## Country Data
+
+GeoStake ships with a static canonical country dataset at
+`src/data/countries/countries.json` plus a small accessor module
+(`src/data/countries/index.ts`). The React application imports this generated
+dataset locally; it never talks to a backend or parses the raw FactsBook files
+at runtime, so gameplay works fully offline.
+
+### Source
+
+The canonical dataset is generated from the
+[factbook.json](https://github.com/factbook/factbook.json) repository (the CIA
+World Factbook exported as JSON). The repository is cloned locally and treated
+as the only source of truth; no network requests are made during generation.
+
+### Pipeline
+
+The mapping from raw FactsBook JSON to canonical GeoStake country data is:
+
+```text
+FactsBook JSON → parser/normalizer (src/data/countries/normalization.ts)
+              → required-field validation
+              → canonical Country[] (src/data/countries/countries.json)
+```
+
+Normalization is implemented as pure, independently testable functions. Only
+records with all required fields (`name`, `population`, `landAreaKm2`,
+`region`, `hemisphere`, `populationDensity`, `capital`) are retained. Optional
+fields such as `coastlineKm`, elevation extremes, `internetCountryCode`, and
+`nationalColors` are populated when the source data allows. Records that do
+not produce valid data (for example territories without a capital or
+population) are excluded and reported in `src/data/countries/EXCLUDED.md`.
+
+Each country's `startingClue` is generated deterministically from a randomly
+selected fact (population, land area, hemisphere, or region) and never
+reveals the country's name. The `flag` and `outline` fields store future asset
+identifiers (`assets/flags/<ID>.svg`, `assets/outlines/<ID>.svg`); the assets
+themselves are not part of this phase.
+
+### Regenerating the dataset
+
+```sh
+npm run generate:countries
+```
+
+The script reads the FactsBook checkout, normalizes every country file (skipping
+the `world`, `meta`, and `oceans` directories), and writes `countries.json` and
+`EXCLUDED.md`. It is deterministic. Set `FACTBOOK_PATH` to point at a different
+FactsBook checkout if it is not located at the default path.
+
+### License and attribution
+
+The FactsBook data is derived from the CIA World Factbook, which is a public
+domain work. The `factbook.json` repository itself is released under
+[CC0 1.0 Universal](https://github.com/factbook/factbook.json/blob/main/LICENSE.md).
+Raw FactsBook samples used as test fixtures are stored under
+`src/data/countries/fixtures/`.
 
 ## Technology Stack
 
@@ -104,21 +163,22 @@ bundle is built in a Node stage, then copied into a lightweight nginx
 If [Task](https://taskfile.dev) is installed, the following commands are
 available:
 
-| Command             | Description                                       |
-| ------------------- | ------------------------------------------------- |
-| `task install`      | Install dependencies                              |
-| `task dev`          | Start the Vite development server                 |
-| `task test`         | Run the test suite once                           |
-| `task test:watch`   | Run the test suite in watch mode                  |
-| `task typecheck`    | Run the TypeScript type checker                   |
-| `task lint`         | Lint with ESLint                                  |
-| `task format`       | Format with Prettier                              |
-| `task build`        | Build the production bundle                       |
-| `task preview`      | Build and preview the production bundle           |
-| `task clean`        | Remove build artifacts                            |
-| `task docker:build` | Build the production container image              |
-| `task docker:up`    | Build, start, and expose the production container |
-| `task docker:down`  | Stop and remove the production container          |
+| Command              | Description                                       |
+| -------------------- | ------------------------------------------------- |
+| `task install`       | Install dependencies                              |
+| `task dev`           | Start the Vite development server                 |
+| `task test`          | Run the test suite once                           |
+| `task test:watch`    | Run the test suite in watch mode                  |
+| `task typecheck`     | Run the TypeScript type checker                   |
+| `task lint`          | Lint with ESLint                                  |
+| `task format`        | Format with Prettier                              |
+| `task build`         | Build the production bundle                       |
+| `task preview`       | Build and preview the production bundle           |
+| `task data:generate` | Regenerate the canonical country dataset          |
+| `task clean`         | Remove build artifacts                            |
+| `task docker:build`  | Build the production container image              |
+| `task docker:up`     | Build, start, and expose the production container |
+| `task docker:down`   | Stop and remove the production container          |
 
 ## Environment
 
@@ -131,5 +191,7 @@ non-secret and client-visible.
 
 ## License and Attribution
 
-No external data or assets have been introduced yet. Future data sources and
-their licenses will be documented here.
+The canonical country dataset is generated from the public-domain CIA World
+Factbook via the `factbook.json` repository (CC0 1.0 Universal). See the
+[Country Data](#country-data) section for the source and pipeline. No additional
+third-party data or assets have been introduced yet.

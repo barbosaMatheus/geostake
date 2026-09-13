@@ -53,6 +53,11 @@ tasks:
     cmds:
       - npm run preview
 
+  data:generate:
+    desc: Regenerate the canonical country dataset from the local FactsBook checkout
+    cmds:
+      - npm run generate:countries
+
   clean:
     desc: Remove build artifacts
     cmds:

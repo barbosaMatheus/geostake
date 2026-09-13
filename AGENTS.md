@@ -357,6 +357,31 @@ Data normalization should happen outside UI components.
 
 If source data has inconsistencies, aliases, missing values, different country codes, or different naming conventions, resolve those during data preparation rather than throughout the React application.
 
+### 10.1 FactsBook Country Data Pipeline
+
+GeoStake's canonical country dataset is generated from the locally cloned [factbook.json](https://github.com/factbook/factbook.json) repository (CIA World Factbook, public domain), not from an API or a runtime network request.
+
+The generation pipeline is:
+
+```text
+FactsBook JSON → parser/normalizer (src/data/countries/normalization.ts)
+              → required-field validation
+              → canonical Country[] (src/data/countries/countries.json)
+              → React application
+```
+
+Conventions:
+
+* Normalization lives in `src/data/countries/normalization.ts` as pure, independently testable functions. Do not embed FactsBook paths or parsing rules in React components.
+* The canonical dataset is a static generated artifact at `src/data/countries/countries.json`, committed to the repository and imported directly by the application.
+* Regenerate it with `npm run generate:countries` (script: `scripts/generateCountries.ts`). The script is deterministic. It reads the local FactsBook checkout, skipping the `world`, `meta`, and `oceans` directories.
+* Only records with every required field (`name`, `population`, `landAreaKm2`, `region`, `hemisphere`, `populationDensity`, `capital`) are retained. Optional fields do not cause exclusion.
+* Excluded records are logged to `src/data/countries/EXCLUDED.md` with the source file and the invalid/missing field(s).
+* The `flag` and `outline` country fields store future asset identifiers (`assets/flags/<ID>.svg`, `assets/outlines/<ID>.svg`); the assets are added in a later phase.
+* The `startingClue` is generated deterministically from a randomly selected fact (population, land area, hemisphere, or region) and must never name the country.
+* FactsBook HTML entities must be decoded without general-purpose sanitization. The decoder lives in `normalization.ts`; keep it in sync with the entity set actually present in the source.
+* Raw FactsBook samples used by tests are copied into `src/data/countries/fixtures/`. Generated and copied data files under `src/data/countries/` are exempt from Prettier formatting (see `.prettierignore`).
+
 ---
 
 # Static Assets

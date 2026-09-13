@@ -3,3 +3,6 @@ dist
 node_modules
 coverage
 package-lock.json
+src/data/countries/countries.json
+src/data/countries/EXCLUDED.md
+src/data/countries/fixtures

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { MOCK_COUNTRIES } from '../data/mockCountries'
+import { TEST_COUNTRIES } from '../tests/fixtures'
 import GameScreen from './GameScreen'
 
 const alwaysSelectFirst = () => 0
@@ -14,7 +14,7 @@ function getGuessControls() {
 
 describe('GameScreen', () => {
   it('renders the header, resources, mystery country, and guess controls', () => {
-    render(<GameScreen countries={MOCK_COUNTRIES} random={alwaysSelectFirst} />)
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
 
     expect(
       screen.getByRole('heading', { level: 1, name: /geostake/i }),
@@ -26,14 +26,14 @@ describe('GameScreen', () => {
     expect(
       screen.getByRole('heading', { name: /mystery country/i }),
     ).toBeInTheDocument()
-    expect(screen.getByText(MOCK_COUNTRIES[0].startingClue)).toBeInTheDocument()
+    expect(screen.getByText(TEST_COUNTRIES[0].startingClue)).toBeInTheDocument()
     expect(
       screen.getByText(/submit a guess to see the result/i),
     ).toBeInTheDocument()
   })
 
   it('requires a non-empty guess before enabling the submit button', () => {
-    render(<GameScreen countries={MOCK_COUNTRIES} random={alwaysSelectFirst} />)
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
     const { guessInput, submitButton } = getGuessControls()
 
     expect(submitButton).toBeDisabled()
@@ -46,14 +46,14 @@ describe('GameScreen', () => {
   })
 
   it('shows positive feedback and reveals the country on a correct guess', () => {
-    render(<GameScreen countries={MOCK_COUNTRIES} random={alwaysSelectFirst} />)
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
     const { guessInput, submitButton } = getGuessControls()
 
-    fireEvent.change(guessInput, { target: { value: MOCK_COUNTRIES[0].name } })
+    fireEvent.change(guessInput, { target: { value: TEST_COUNTRIES[0].name } })
     fireEvent.click(submitButton)
 
     expect(screen.getByText(/was brazil/i)).toBeInTheDocument()
-    expect(screen.getByText(MOCK_COUNTRIES[0].name)).toBeInTheDocument()
+    expect(screen.getByText(TEST_COUNTRIES[0].name)).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: /start next turn/i }),
     ).toBeInTheDocument()
@@ -61,7 +61,7 @@ describe('GameScreen', () => {
   })
 
   it('shows negative feedback and reduces lives on an incorrect guess', () => {
-    render(<GameScreen countries={MOCK_COUNTRIES} random={alwaysSelectFirst} />)
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
     const { guessInput, submitButton } = getGuessControls()
 
     fireEvent.change(guessInput, { target: { value: 'Atlantis' } })
@@ -72,7 +72,7 @@ describe('GameScreen', () => {
   })
 
   it('starts a new turn after a guess and clears the feedback', () => {
-    render(<GameScreen countries={MOCK_COUNTRIES} random={alwaysSelectFirst} />)
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
     const { guessInput, submitButton } = getGuessControls()
 
     fireEvent.change(guessInput, { target: { value: 'Atlantis' } })
