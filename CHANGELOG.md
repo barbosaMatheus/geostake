@@ -4,6 +4,37 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.6.0] - 2026-09-13
+
+### Added
+
+- Two new visual clues: **Country Outline** (tier 3, base cost 50) and
+  **Country Flag** (tier 4, base cost 75). Both reuse the existing clue
+  availability, purchase, reveal, and reward mechanics and share the current
+  tier costs (250 / 375 geodes at the default multiplier).
+- A `kind` field on clue definitions (`'text' | 'flag' | 'outline'`, defaulting
+  to `'text'`) so clues can present visual content; existing text clues are
+  unchanged.
+- Country flag rendering from `country-flag-icons` (bundled React components,
+  resolved by ISO code) in `src/visual/flagAtlas.ts`.
+- Country outline rendering from `@rembish/iso-topojson` (bundled TopoJSON,
+  geometry decoded to an SVG path at runtime) in `src/visual/topojson.ts` and
+  `src/visual/outlineAtlas.ts`. Only the current mystery country's geometry is
+  decoded, on demand and cached, and scaled to fit the clue panel while
+  preserving aspect ratio (including multi-polygon/island countries).
+- Runtime ISO 3166-1 alpha-2 derivation (`src/data/countries/isoCode.ts`) from
+  each country's `internetCountryCode` field, with overrides for the United
+  Kingdom (`GB`) and France (`FR`).
+- Fail-safe missing-asset handling: when a flag or outline cannot be resolved,
+  the clue is marked unavailable and the game continues normally.
+- Accessible, generic labels for the visual clues ("Country outline clue" /
+  "Country flag clue") that never reveal the country's identity.
+- Two new runtime dependencies (`country-flag-icons`, `@rembish/iso-topojson`);
+  both datasets are bundled into the offline production build.
+- Application version bumped to `0.6.0`.
+
+[0.6.0]: https://github.com/barbosaMatheus/geostake
+
 ## [0.5.1] - 2026-09-13
 
 ### Changed

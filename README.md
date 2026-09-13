@@ -15,7 +15,8 @@ solving a turn, and a way to start the next turn. The application is powered by
 a canonical country dataset generated from the public-domain CIA World
 Factbook. Clues are revealed automatically and purchased with geodes according
 to a centralized cost multiplier, and correct guesses award geodes according to
-a tier-weighted reward system. Persistence, country flag/outline assets,
+a tier-weighted reward system, including two visual clues that render the
+mystery country's outline and flag from locally bundled data. Persistence,
 difficulty modes, and PWA support are not implemented yet.
 
 ## Clue System
@@ -32,8 +33,8 @@ country cannot be purchased.
 | 0    | Free      | Population, Land Area, Population Density, Lowest Elevation |         0 |
 | 1    | Low       | Region, Hemisphere                                          |        10 |
 | 2    | Medium    | Coastline, Highest Elevation                                |        20 |
-| 3    | High      | Capital, National Colors                                    |        50 |
-| 4    | Very High | Internet Country Code                                       |        75 |
+| 3    | High      | Capital, National Colors, Country Outline                   |        50 |
+| 4    | Very High | Internet Country Code, Country Flag                         |        75 |
 
 The current cost of a clue is its base cost times the centralized
 `CLUE_COST_MULTIPLIER` (default `5`, the normal-difficulty multiplier), so the
@@ -42,6 +43,42 @@ lives in `src/game/clueConfig.ts` and is designed to make future difficulty
 modes change only that value. Clue tiers and definitions are data-driven, so
 additional tiers (5, 6, ...) and clues can be added without restructuring the
 system. Clue rules live in pure, unit-tested functions in `src/game/clues.ts`.
+
+Two clues are **visual** instead of text: the Country Outline (tier 3) draws
+the mystery country's silhouette and the Country Flag (tier 4) shows its flag.
+When revealed, both render the asset directly in the clue panel with a generic
+accessible label ("Country outline clue" / "Country flag clue") so the
+country's name is never disclosed before the player guesses it. See
+[Visual Clue Assets](#visual-clue-assets) below.
+
+## Visual Clue Assets
+
+GeoStake resolves both visual clues from a country's ISO 3166-1 alpha-2 code.
+The canonical dataset keys countries on FactsBook GEC codes rather than ISO
+codes, so the ISO value is derived deterministically at runtime from each
+country's `internetCountryCode` field in `src/data/countries/isoCode.ts`
+(with two documented overrides: `.uk` → `GB` and France → `FR`).
+
+- **Flags** come from `country-flag-icons` (MIT). The React components are
+  imported as a namespace in `src/visual/flagAtlas.ts` and bundled with the
+  application, so every flag renders locally with no network access.
+- **Outlines** come from `@rembish/iso-topojson` (CC BY 4.0, derived from
+  public-domain Natural Earth 10m data). The TopoJSON is imported as a static
+  JSON module and bundled. Only the current mystery country's geometry is
+  decoded, on demand and cached, into an SVG path at runtime
+  (`src/visual/outlineAtlas.ts`). The decoding logic itself lives in the
+  dependency-free `src/visual/topojson.ts`, isolating TopoJSON specifics so the
+  underlying dataset can be swapped later without touching game code. Geometry
+  is projected into its own `viewBox`, so each outline keeps its true shape
+  and aspect ratio while scaling to fit the clue panel.
+- When an asset cannot be resolved (no ISO code, an unknown code, or a missing
+  flag/geometry), the visual clue is simply marked **Unavailable for this
+  country**; the clue cannot be purchased, and the rest of the game continues
+  normally.
+
+Both datasets are part of the production bundle (the flags, the world
+outline geometry, and application code ship together in the single offline
+JavaScript build), so visual clues work with the network disconnected.
 
 ## Game Configuration
 
@@ -131,9 +168,11 @@ population) are excluded and reported in `src/data/countries/EXCLUDED.md`.
 
 Each country's `startingClue` is generated deterministically from a randomly
 selected fact (population, land area, hemisphere, or region) and never
-reveals the country's name. The `flag` and `outline` fields store future asset
-identifiers (`assets/flags/<ID>.svg`, `assets/outlines/<ID>.svg`); the assets
-themselves are not part of this phase.
+reveals the country's name. The `flag` and `outline` fields store asset
+identifiers (`assets/flags/<ID>.svg`, `assets/outlines/<ID>.svg`) reserved for
+future use; the visual clues added in Phase 5 resolve their assets from the
+country's ISO code instead (see
+[Visual Clue Assets](#visual-clue-assets)).
 
 ### Regenerating the dataset
 
@@ -273,5 +312,13 @@ non-secret and client-visible.
 
 The canonical country dataset is generated from the public-domain CIA World
 Factbook via the `factbook.json` repository (CC0 1.0 Universal). See the
-[Country Data](#country-data) section for the source and pipeline. No additional
-third-party data or assets have been introduced yet.
+[Country Data](#country-data) section for the source and pipeline.
+
+The visual clue assets bundle two additional local datasets:
+
+- **Flags** — `country-flag-icons` (MIT, &copy; 2020 @catamphetamine).
+- **Country outlines** — `@rembish/iso-topojson` (CC BY 4.0), derived from
+  public-domain [Natural Earth 10m](https://www.naturalearthdata.com/) shape
+  files. Attribution for GeoStake's use of the derived outline dataset: World
+  country outlines from [rembish/iso-topojson](https://github.com/rembish/iso-topojson),
+  &copy; Sebastien Rombauts, under CC BY 4.0.

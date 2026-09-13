@@ -1,4 +1,13 @@
-import type { ClueDefinition, ClueId, ClueTier, ClueValue } from '../types/clue'
+import type {
+  ClueDefinition,
+  ClueId,
+  ClueKind,
+  ClueTier,
+  ClueValue,
+} from '../types/clue'
+import { isoCodeOf } from '../data/countries/isoCode'
+import { getFlagComponent } from '../visual/flagAtlas'
+import { getOutlineGeometry } from '../visual/outlineAtlas'
 
 export const CLUE_COST_MULTIPLIER = 5
 
@@ -112,6 +121,26 @@ export const CLUES: readonly ClueDefinition<ClueValue>[] = [
     getValue: (country) => country.internetCountryCode as string,
     formatValue: (value) => value,
   } satisfies ClueDefinition<string>,
+  {
+    id: 'country-flag',
+    tier: 4,
+    baseCost: 75,
+    label: 'Country Flag',
+    kind: 'flag',
+    isAvailable: (country) => getFlagComponent(isoCodeOf(country)) !== null,
+    getValue: (country) => isoCodeOf(country) ?? '',
+    formatValue: (value) => value,
+  } satisfies ClueDefinition<string>,
+  {
+    id: 'country-outline',
+    tier: 3,
+    baseCost: 50,
+    label: 'Country Outline',
+    kind: 'outline',
+    isAvailable: (country) => getOutlineGeometry(isoCodeOf(country)) !== null,
+    getValue: (country) => isoCodeOf(country) ?? '',
+    formatValue: (value) => value,
+  } satisfies ClueDefinition<string>,
 ]
 
 const TIER_LABELS: Record<number, string> = {
@@ -156,4 +185,11 @@ export function getCluesForTier(
 
 export function getClueLabel(id: ClueId): string {
   return getClueDefinition(id).label
+}
+
+export function getClueKind(
+  id: ClueId,
+  clues: readonly ClueDefinition<ClueValue>[] = CLUES,
+): ClueKind {
+  return getClueDefinition(id, clues).kind ?? 'text'
 }

@@ -1,6 +1,7 @@
 import {
   CLUE_COST_MULTIPLIER,
   CLUES,
+  getClueKind,
   getClueTiers,
   getTierLabel,
 } from '../game/clueConfig'
@@ -13,6 +14,8 @@ import {
 import type { ClueDefinition, ClueId, ClueTier, ClueValue } from '../types/clue'
 import type { Country } from '../types/country'
 import type { GeodeAmount } from '../types/player'
+import CountryFlag from './CountryFlag'
+import CountryOutline from './CountryOutline'
 
 interface CluePanelProps {
   country: Country
@@ -67,6 +70,24 @@ interface ClueRowProps {
   onReveal: (clueId: ClueId) => void
 }
 
+function ClueValueContent({
+  kind,
+  clueId,
+  country,
+}: {
+  kind: ReturnType<typeof getClueKind>
+  clueId: ClueId
+  country: Country
+}) {
+  if (kind === 'flag') {
+    return <CountryFlag country={country} />
+  }
+  if (kind === 'outline') {
+    return <CountryOutline country={country} />
+  }
+  return <span className="clue-value">{formatClueValue(clueId, country)}</span>
+}
+
 function ClueTierBlock({
   tier,
   country,
@@ -114,17 +135,19 @@ function ClueRow({
   const isRevealed = revealedClueIds.includes(clue.id)
 
   if (isRevealed) {
+    const kind = getClueKind(clue.id)
     const className = [
       'clue',
       'clue-revealed',
       isStartingClue ? 'clue-starting' : '',
+      kind === 'text' ? '' : 'clue-visual',
     ]
       .filter(Boolean)
       .join(' ')
     return (
       <li className={className}>
         <span className="clue-name">{clue.label}</span>
-        <span className="clue-value">{formatClueValue(clue.id, country)}</span>
+        <ClueValueContent kind={kind} clueId={clue.id} country={country} />
         {isStartingClue && <span className="clue-badge">Starting clue</span>}
       </li>
     )

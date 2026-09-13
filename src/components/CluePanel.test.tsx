@@ -91,7 +91,7 @@ describe('CluePanel', () => {
   it('marks clues whose optional data is missing as unavailable', () => {
     renderPanel()
 
-    expect(screen.getAllByText('Unavailable for this country')).toHaveLength(3)
+    expect(screen.getAllByText('Unavailable for this country')).toHaveLength(5)
   })
 
   it('disables and flags clues that cost more geodes than the player has', () => {
@@ -130,5 +130,65 @@ describe('CluePanel', () => {
     expect(screen.getByText('Population')).toBeInTheDocument()
     expect(screen.getByText('221,359,387')).toBeInTheDocument()
     expect(screen.getByText('Starting clue')).toBeInTheDocument()
+  })
+})
+
+describe('CluePanel visual clues', () => {
+  it('offers the country outline at the tier 3 cost', () => {
+    renderPanel({ country: japan })
+
+    const button = screen.getByRole('button', {
+      name: 'Country Outline · 250 geodes',
+    })
+    expect(button).toBeEnabled()
+  })
+
+  it('offers the country flag at the tier 4 cost', () => {
+    renderPanel({ country: japan })
+
+    const button = screen.getByRole('button', {
+      name: 'Country Flag · 375 geodes',
+    })
+    expect(button).toBeEnabled()
+  })
+
+  it('reveals a purchased country outline with a generic accessible label', () => {
+    renderPanel({ country: japan, revealedClueIds: ['country-outline'] })
+
+    const image = screen.getByRole('img', { name: 'Country outline clue' })
+    expect(image).toBeInTheDocument()
+    expect(screen.getByText('Country Outline')).toBeInTheDocument()
+    expect(screen.queryByText('Japan')).not.toBeInTheDocument()
+  })
+
+  it('reveals a purchased country flag with a generic accessible label', () => {
+    renderPanel({ country: japan, revealedClueIds: ['country-flag'] })
+
+    const image = screen.getByRole('img', { name: 'Country flag clue' })
+    expect(image).toBeInTheDocument()
+    expect(image.querySelectorAll('path').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Japan')).not.toBeInTheDocument()
+  })
+
+  it('marks visual clues unavailable when the country has no resolvable asset', () => {
+    renderPanel({ country: brazil })
+
+    expect(screen.getAllByText('Unavailable for this country')).toHaveLength(5)
+    expect(
+      screen.queryByRole('button', { name: 'Country Flag · 375 geodes' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Country Outline · 250 geodes' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('reveals visual clues with a purchase control click', () => {
+    const { onReveal } = renderPanel({ country: japan })
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Country Flag · 375 geodes' }),
+    )
+
+    expect(onReveal).toHaveBeenCalledWith('country-flag')
   })
 })

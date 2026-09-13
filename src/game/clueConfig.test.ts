@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { ClueId } from '../types/clue'
-import { CLUES, CLUE_COST_MULTIPLIER, getClueTiers } from './clueConfig'
+import {
+  CLUES,
+  CLUE_COST_MULTIPLIER,
+  getClueKind,
+  getClueTiers,
+} from './clueConfig'
 import { getClueCost } from './clues'
 
 const expectedTiers: Record<ClueId, number> = {
@@ -15,6 +20,8 @@ const expectedTiers: Record<ClueId, number> = {
   capital: 3,
   'national-colors': 3,
   'internet-country-code': 4,
+  'country-flag': 4,
+  'country-outline': 3,
 }
 
 const expectedBaseCosts: Record<ClueId, number> = {
@@ -29,6 +36,24 @@ const expectedBaseCosts: Record<ClueId, number> = {
   capital: 50,
   'national-colors': 50,
   'internet-country-code': 75,
+  'country-flag': 75,
+  'country-outline': 50,
+}
+
+const expectedKinds: Record<ClueId, 'text' | 'flag' | 'outline'> = {
+  population: 'text',
+  'land-area': 'text',
+  'population-density': 'text',
+  'lowest-elevation': 'text',
+  region: 'text',
+  hemisphere: 'text',
+  coastline: 'text',
+  'highest-elevation': 'text',
+  capital: 'text',
+  'national-colors': 'text',
+  'internet-country-code': 'text',
+  'country-flag': 'flag',
+  'country-outline': 'outline',
 }
 
 describe('CLUES', () => {
@@ -48,6 +73,30 @@ describe('CLUES', () => {
     for (const clue of CLUES) {
       expect(clue.baseCost).toBe(expectedBaseCosts[clue.id])
     }
+  })
+
+  it('assigns every clue its correct display kind', () => {
+    for (const clue of CLUES) {
+      expect(getClueKind(clue.id)).toBe(expectedKinds[clue.id])
+    }
+  })
+
+  it('marks only the visual clues as non-text', () => {
+    const visual = CLUES.filter(
+      (clue) => clue.kind === 'flag' || clue.kind === 'outline',
+    )
+    expect(visual.map((clue) => clue.id).sort()).toEqual([
+      'country-flag',
+      'country-outline',
+    ])
+  })
+
+  it('keeps the existing Tier 3 and Tier 4 costs unchanged', () => {
+    expect(getClueCost('capital')).toBe(250)
+    expect(getClueCost('national-colors')).toBe(250)
+    expect(getClueCost('country-outline')).toBe(250)
+    expect(getClueCost('internet-country-code')).toBe(375)
+    expect(getClueCost('country-flag')).toBe(375)
   })
 
   it('exposes the five expected tiers in ascending order', () => {

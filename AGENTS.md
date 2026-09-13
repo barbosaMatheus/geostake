@@ -1113,6 +1113,16 @@ Turn-state conventions:
 
 Random selection points (country choice, starting clue) accept an injectable `random: () => number` dependency for deterministic tests. Prefer the shared helpers in `src/game/random.ts` (`randomIndex`, `pickRandom`).
 
+Visual-clue conventions:
+
+* Two clues render visuals instead of text: `country-outline` (tier 3, base cost 50) and `country-flag` (tier 4, base cost 75). Each has `kind: 'outline'` or `kind: 'flag'` on its `ClueDefinition`; text clues omit `kind` (treated as `'text'`, resolved through `getClueKind` in `clueConfig.ts`). Do not add new fields that only visual clues could need; keep every text clue unchanged.
+* Visual clues reuse the same availability/purchase/reveal/economy mechanics as text clues. `isAvailable` returns `false` (never throws) when the asset cannot be resolved, so the clue shows "Unavailable for this country" and the game continues.
+* All visual-asset resolution is keyed on ISO 3166-1 alpha-2 codes derived at runtime from the country's `internetCountryCode` field via `isoCodeOf` (`src/data/countries/isoCode.ts`, returning `string | null`; overrides `uk → GB`, `fr → FR`). Do not add an ISO field to the canonical dataset just to serve visual assets.
+* TopoJSON-specific logic is isolated and dependency-free in `src/visual/topojson.ts` (arc decoding, ring stitching, SVG path/viewBox generation). `src/visual/outlineAtlas.ts` is the only module that imports `@rembish/iso-topojson`; flag lookup is isolated in `src/visual/flagAtlas.ts` (imports `country-flag-icons/react/3x2`). Components (`CountryOutline`, `CountryFlag`) only call these atlases; keep other TopoJSON/flag-package knowledge out of game code and UI.
+* The TopoJSON and all flags are bundled into the production build (no runtime network). Outline geometry is decoded per country on demand and cached; neither atlas fetches anything.
+* Never reveal the country's identity through a visual clue: rendered visuals use generic accessible labels (`"Country outline clue"`, `"Country flag clue"`), `role="img"`, and no `title`, `alt`, or visible text naming the country before it is guessed.
+* Missing/resolution-order behavior is a first-class concern: lookups resolve to `null` and components render nothing rather than crashing; tests must cover missing-flag and missing-outline handling.
+
 ---
 
 ## 38. Economy, Rewards, and Life Purchases

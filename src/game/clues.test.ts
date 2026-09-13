@@ -94,6 +94,20 @@ describe('getAvailableClues', () => {
     expect(availableIds).toContain('internet-country-code')
     expect(availableIds).not.toContain('lowest-elevation')
   })
+
+  it('offers the visual clues when the country has a resolvable ISO code', () => {
+    const availableIds = getAvailableClues(japan).map((clue) => clue.id)
+
+    expect(availableIds).toContain('country-outline')
+    expect(availableIds).toContain('country-flag')
+  })
+
+  it('hides the visual clues when the country has no resolvable ISO code', () => {
+    const availableIds = getAvailableClues(brazil).map((clue) => clue.id)
+
+    expect(availableIds).not.toContain('country-outline')
+    expect(availableIds).not.toContain('country-flag')
+  })
 })
 
 describe('isClueAvailable', () => {
@@ -121,6 +135,13 @@ describe('isClueAvailable', () => {
     ] as const) {
       expect(isClueAvailable(id, brazil)).toBe(true)
     }
+  })
+
+  it('reports visual clues available only when their asset resolves', () => {
+    expect(isClueAvailable('country-outline', japan)).toBe(true)
+    expect(isClueAvailable('country-flag', japan)).toBe(true)
+    expect(isClueAvailable('country-outline', brazil)).toBe(false)
+    expect(isClueAvailable('country-flag', brazil)).toBe(false)
   })
 })
 
@@ -298,5 +319,69 @@ describe('clue state across turns', () => {
 
     expect(newTurn.startingClueId).toBe('population-density')
     expect(newTurn.revealedClueIds).toEqual(['population-density'])
+  })
+})
+
+describe('visual clues', () => {
+  it('reveals the country outline at its tier 3 cost', () => {
+    const state = createInitialGameState([japan], GAME_CONFIG, alwaysFirst)
+    const next = revealClue(state, 'country-outline')
+
+    expect(next.player.geodes).toBe(state.player.geodes - 250)
+    expect(next.revealedClueIds).toContain('country-outline')
+    expect(next.purchasedClueIds).toContain('country-outline')
+  })
+
+  it('reveals the country flag at its tier 4 cost', () => {
+    const state = createInitialGameState([japan], GAME_CONFIG, alwaysFirst)
+    const next = revealClue(state, 'country-flag')
+
+    expect(next.player.geodes).toBe(state.player.geodes - 375)
+    expect(next.revealedClueIds).toContain('country-flag')
+    expect(next.purchasedClueIds).toContain('country-flag')
+  })
+
+  it('tracks purchased visual clues separately from the free tier 0 clue', () => {
+    const state = createInitialGameState([japan], GAME_CONFIG, alwaysFirst)
+    const next = revealClue(state, 'country-flag')
+
+    expect(next.purchasedClueIds).toEqual(['country-flag'])
+    expect(next.purchasedClueIds).not.toContain(state.startingClueId)
+    expect(next.revealedClueIds).toContain(state.startingClueId)
+    expect(next.revealedClueIds).toContain('country-flag')
+  })
+
+  it('does not reveal a visual clue twice', () => {
+    const state = createInitialGameState([japan], GAME_CONFIG, alwaysFirst)
+    const revealed = revealClue(state, 'country-outline')
+    const again = revealClue(revealed, 'country-outline')
+
+    expect(again).toBe(revealed)
+    expect(again.purchasedClueIds).toEqual(['country-outline'])
+  })
+
+  it('does not reveal a visual clue that cannot be afforded', () => {
+    const state = {
+      ...createInitialGameState([japan], GAME_CONFIG, alwaysFirst),
+      player: {
+        ...createInitialGameState([japan], GAME_CONFIG, alwaysFirst).player,
+        geodes: 300,
+      },
+    }
+    const next = revealClue(state, 'country-flag')
+
+    expect(next).toBe(state)
+    expect(next.revealedClueIds).not.toContain('country-flag')
+  })
+
+  it('does not reveal a visual clue whose asset cannot be resolved', () => {
+    const state = createInitialGameState([brazil], GAME_CONFIG, alwaysFirst)
+    const next = revealClue(state, 'country-outline')
+    const flagNext = revealClue(state, 'country-flag')
+
+    expect(next).toBe(state)
+    expect(flagNext).toBe(state)
+    expect(next.revealedClueIds).not.toContain('country-outline')
+    expect(flagNext.purchasedClueIds).not.toContain('country-flag')
   })
 })
