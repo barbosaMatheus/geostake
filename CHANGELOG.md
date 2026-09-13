@@ -4,6 +4,32 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.9.0] - 2026-09-13
+
+### Added
+
+- The game view is now laid out to better use horizontal tablet space: the
+  player status bar is split into three balanced columns (Geodes, Lives,
+  Turn), the clue tiers render in a two-column grid on wider screens (the free
+  starting clue spans the full width), and the guess row stacks gracefully on
+  narrow screens.
+- **Home** is now a subtle button inside the Geodes status column, replacing
+  the prominent header "Back to Landing" control.
+- A temporary debug **Skip** action under the Turn column advances to a brand
+  new turn immediately without spending geodes, losing a life, or awarding a
+  reward. It works mid-turn and even while a resolved turn is waiting, and it
+  is persisted through the normal save pipeline.
+- Application version bumped to `0.9.0`.
+
+### Changed
+
+- `StatusBar` accepts optional `onHome` and `onSkip` handlers; Home and Skip
+  render only when their handler is provided.
+- `useGame` exposes a `skipTurn` action backed by the pure `skipTurn` function
+  in `src/game/game.ts`.
+
+[0.9.0]: https://github.com/barbosaMatheus/geostake
+
 ## [0.8.0] - 2026-09-13
 
 ### Added

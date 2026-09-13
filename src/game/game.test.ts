@@ -10,6 +10,7 @@ import {
   isCorrectGuess,
   normalizeCountryName,
   resolveGuess,
+  skipTurn,
   startNextTurn,
 } from './game'
 
@@ -273,6 +274,72 @@ describe('startNextTurn', () => {
     expect(next.player.lives).toBe(ECONOMY_CONFIG.startingLives)
     expect(next.player.geodes).toBe(ECONOMY_CONFIG.startingGeodes)
     expect(next.purchasedClueIds).toEqual([])
+  })
+})
+
+describe('skipTurn', () => {
+  it('advances the turn and selects a fresh country mid-turn', () => {
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    const next = skipTurn(state, TEST_COUNTRIES, alwaysSelectFirst)
+
+    expect(next.turn).toBe(2)
+    expect(next.guessResult).toBeNull()
+    expect(next.mysteryCountry).toBe(TEST_COUNTRIES[0])
+  })
+
+  it('preserves geodes and lives untouched', () => {
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    const withClues = revealClue(revealClue(state, 'region'), 'capital')
+    const next = skipTurn(withClues, TEST_COUNTRIES, alwaysSelectFirst)
+
+    expect(next.player.geodes).toBe(withClues.player.geodes)
+    expect(next.player.lives).toBe(withClues.player.lives)
+  })
+
+  it('resets the turn-specific clue and guess state', () => {
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    const withClues = revealClue(revealClue(state, 'region'), 'capital')
+    const resolved = applyGuess(withClues, 'Atlantis')
+    const next = skipTurn(resolved, TEST_COUNTRIES, alwaysSelectFirst)
+
+    expect(next.revealedClueIds).toHaveLength(1)
+    expect(next.revealedClueIds[0]).toBe(next.startingClueId)
+    expect(next.purchasedClueIds).toEqual([])
+    expect(next.guessResult).toBeNull()
+  })
+
+  it('awards no reward for skipping', () => {
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    const next = skipTurn(state, TEST_COUNTRIES, alwaysSelectFirst)
+
+    expect(next.player.geodes).toBe(ECONOMY_CONFIG.startingGeodes)
+    expect(next.guessResult).toBeNull()
+  })
+
+  it('throws when no countries are available', () => {
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+
+    expect(() => skipTurn(state, [])).toThrow()
   })
 })
 

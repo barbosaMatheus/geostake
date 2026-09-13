@@ -122,3 +122,31 @@ export function startNextTurn(
     purchasedClueIds: [],
   }
 }
+
+/**
+ * Advances to a brand-new turn unconditionally, used by the temporary debug
+ * Skip action. Unlike `startNextTurn` it works mid-turn and never spends,
+ * awards, or deducts anything: geodes and lives are preserved untouched. Turn
+ * state (mystery country, clues, guesses, feedback) is reset as a normal new
+ * turn.
+ */
+export function skipTurn(
+  state: GameState,
+  countries: readonly Country[],
+  random: () => number = Math.random,
+): GameState {
+  if (countries.length === 0) {
+    throw new Error('Cannot skip to a new turn without any countries')
+  }
+  const mysteryCountry = selectMysteryCountry(countries, random)
+  const startingClueId = selectStartingClue(mysteryCountry, random)
+  return {
+    ...state,
+    turn: state.turn + 1,
+    mysteryCountry,
+    guessResult: null,
+    startingClueId,
+    revealedClueIds: [startingClueId],
+    purchasedClueIds: [],
+  }
+}

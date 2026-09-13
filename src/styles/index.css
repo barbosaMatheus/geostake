@@ -54,6 +54,10 @@ body {
   padding: clamp(1.5rem, 4vw, 3rem);
 }
 
+.app.game-screen {
+  max-width: 56rem;
+}
+
 .app h1 {
   margin: 0;
   font-size: clamp(2.5rem, 10vw, 4.5rem);
@@ -67,12 +71,6 @@ body {
   font-size: clamp(0.95rem, 2.5vw, 1.15rem);
   color: var(--color-accent);
   text-align: center;
-}
-
-.game-nav {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 1rem;
 }
 
 .landing-menu {
@@ -140,8 +138,15 @@ body {
 .resource-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 0.75rem;
   margin: 0;
+}
+
+.status-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: stretch;
 }
 
 .resource {
@@ -169,17 +174,13 @@ body {
   text-align: center;
 }
 
-.life-purchase {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-}
-
-.life-buy-button {
+.life-buy-button,
+.home-button,
+.skip-button {
   font: inherit;
   font-weight: 700;
-  padding: 0.6rem 1.25rem;
+  min-height: 2.6rem;
+  padding: 0.6rem 1rem;
   border: 1px solid var(--color-accent);
   border-radius: var(--radius);
   background: var(--color-surface);
@@ -187,13 +188,26 @@ body {
   cursor: pointer;
 }
 
-.life-buy-button:hover:not(:disabled) {
+.life-buy-button:hover:not(:disabled),
+.home-button:hover:not(:disabled),
+.skip-button:hover:not(:disabled) {
   filter: brightness(1.05);
 }
 
 .life-buy-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+  color: var(--color-muted);
+}
+
+.home-button,
+.skip-button {
+  border-color: var(--color-border);
+  color: var(--color-foreground);
+}
+
+.skip-button {
+  border-style: dashed;
   color: var(--color-muted);
 }
 
@@ -238,7 +252,10 @@ body {
   font-style: italic;
 }
 
-.clue-tier + .clue-tier {
+.clue-tiers {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
   margin-top: 1rem;
 }
 
@@ -523,5 +540,15 @@ body {
 @media (max-width: 30rem) {
   .guess-form-row {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 48rem) {
+  .clue-tiers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .clue-tier-full {
+    grid-column: 1 / -1;
   }
 }

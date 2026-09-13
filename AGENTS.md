@@ -320,7 +320,7 @@ The application has no router. Screen-to-screen navigation is a single `AppView`
 Conventions:
 
 * Create one screen component per view in `src/components` (`LandingScreen`, `GameScreen`, `SettingsScreen`). `App` switches on the `AppView` union and passes typed callbacks (`onNewGame`, `onSettings`, `onBack`, `onExit`) rather than raw setters.
-* `GameScreen` accepts an optional `onExit` callback; when provided it renders a *Back to Landing* control. Never let navigation state live inside `useGame` or game logic.
+* `GameScreen` accepts an optional `onExit` callback and passes it to `StatusBar` as `onHome`, which renders a subtle **Home** button inside the Geodes status column (there is no separate header navigation bar on the game screen). Never let navigation state live inside `useGame` or game logic.
 * The landing screen's **Continue Game** button is enabled only when a valid saved game exists (`hasSavedGame` prop computed by `App` from the persistence layer, never by the screen itself). Reaching the landing screen always rechecks the save so the button reflects the latest game.
 * Do not introduce React Router (or a similar dependency) unless the app genuinely needs URL-based routing; view state is sufficient for the current scope.
 
@@ -1185,6 +1185,11 @@ Life purchases:
 
 * Buying a life is an explicit player action (`purchaseLife` on `useGame`, wired to the "Buy Life" control in `StatusBar`). It costs `lifeCost` geodes and adds one life, never producing negative geodes, and never exceeding `maxLives`.
 * A life purchase is unavailable (disabled) when the player lacks geodes, is already at `maxLives`, or the current turn is resolved (guessed or out of lives).
+
+Debug Skip (temporary):
+
+* **Skip** is a temporary development convenience, not a real game rule. It is rendered as a button in the Turn status column and implemented as the pure `skipTurn(state, countries, random)` function in `src/game/game.ts` plus a `skipTurn` action on `useGame`. Do not expand it into a purchasable or rewarded game system.
+* `skipTurn` always advances to a brand-new turn: it increments `turn`, selects a fresh mystery country and starting clue, resets `guessResult`, `revealedClueIds`, and `purchasedClueIds`, and — unlike `startNextTurn` — never spends geodes, deducts a life, or awards a reward. It works regardless of the current clue/guess state, geodes, or lives (including a resolved turn or zero lives). Persistence flows through the existing `usePersistentGame` pipeline unchanged.
 
 ---
 

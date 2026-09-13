@@ -44,18 +44,20 @@ function CluePanel({
           Clue purchases are disabled until the next turn begins.
         </p>
       )}
-      {tiers.map((tier) => (
-        <ClueTierBlock
-          key={tier}
-          tier={tier}
-          country={country}
-          geodes={geodes}
-          startingClueId={startingClueId}
-          revealedClueIds={revealedClueIds}
-          disabled={disabled}
-          onReveal={onReveal}
-        />
-      ))}
+      <div className="clue-tiers">
+        {tiers.map((tier) => (
+          <ClueTierBlock
+            key={tier}
+            tier={tier}
+            country={country}
+            geodes={geodes}
+            startingClueId={startingClueId}
+            revealedClueIds={revealedClueIds}
+            disabled={disabled}
+            onReveal={onReveal}
+          />
+        ))}
+      </div>
     </section>
   )
 }
@@ -102,7 +104,7 @@ function ClueTierBlock({
   )
 
   return (
-    <div className="clue-tier">
+    <div className={tier === 0 ? 'clue-tier clue-tier-full' : 'clue-tier'}>
       <h3 className="clue-tier-title">{getTierLabel(tier)}</h3>
       <ul className="clue-list">
         {clues.map((clue) => (

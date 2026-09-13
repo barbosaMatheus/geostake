@@ -73,7 +73,7 @@ describe('App landing and navigation', () => {
   it('enables Continue Game after a game has been saved', () => {
     renderApp(storage)
     fireEvent.click(getLandingButtons().newGame)
-    fireEvent.click(screen.getByRole('button', { name: /back to landing/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^home$/i }))
 
     expect(getLandingButtons().continueGame).toBeEnabled()
   })

@@ -6,6 +6,7 @@ import {
   createInitialGameState,
   isCorrectGuess,
   resolveGuess,
+  skipTurn as advanceSkip,
   startNextTurn as advanceTurn,
 } from '../game/game'
 import type { ClueId } from '../types/clue'
@@ -64,6 +65,12 @@ export function useGame(
     setLastIncorrectGuess(null)
   }, [countries, config, random])
 
+  const skipTurn = useCallback(() => {
+    const current = gameStateRef.current
+    setGameState(advanceSkip(current, countries, random))
+    setLastIncorrectGuess(null)
+  }, [countries, random])
+
   const purchaseLife = useCallback(() => {
     setGameState((current) => ({
       ...current,
@@ -75,6 +82,7 @@ export function useGame(
     gameState,
     submitGuess,
     startNextTurn,
+    skipTurn,
     revealClue,
     purchaseLife,
     lastIncorrectGuess,

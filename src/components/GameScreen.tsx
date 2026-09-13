@@ -31,6 +31,7 @@ function GameScreen({
     gameState,
     submitGuess,
     startNextTurn,
+    skipTurn,
     revealClue,
     purchaseLife,
     lastIncorrectGuess,
@@ -39,21 +40,16 @@ function GameScreen({
   const turnResolved = guessResult !== null || player.lives === 0
 
   return (
-    <main className="app">
-      {onExit && (
-        <div className="game-nav">
-          <button className="button-secondary" type="button" onClick={onExit}>
-            Back to Landing
-          </button>
-        </div>
-      )}
+    <main className="app game-screen">
       <GameTitle />
       <StatusBar
         player={player}
         turn={gameState.turn}
         economy={config.economy}
         disabled={turnResolved}
+        onHome={onExit}
         onBuyLife={purchaseLife}
+        onSkip={skipTurn}
       />
       <MysteryCountry
         country={mysteryCountry}

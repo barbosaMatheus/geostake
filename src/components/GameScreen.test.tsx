@@ -25,9 +25,7 @@ describe('GameScreen', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: /geostake/i }),
     ).toBeInTheDocument()
-    expect(
-      screen.queryByRole('button', { name: /back to landing/i }),
-    ).toBeNull()
+    expect(screen.queryByRole('button', { name: /^home$/i })).toBeNull()
     expect(screen.getByText('Geodes')).toBeInTheDocument()
     expect(screen.getByText('Lives')).toBeInTheDocument()
     expect(screen.getByText('1000')).toBeInTheDocument()
@@ -41,7 +39,7 @@ describe('GameScreen', () => {
     ).toBeInTheDocument()
   })
 
-  it('offers a back-to-landing control when an exit handler is provided', () => {
+  it('offers a home control that exits to the landing screen when provided', () => {
     const onExit = vi.fn()
     render(
       <GameScreen
@@ -51,8 +49,8 @@ describe('GameScreen', () => {
       />,
     )
 
-    const backButton = screen.getByRole('button', { name: /back to landing/i })
-    fireEvent.click(backButton)
+    const homeButton = screen.getByRole('button', { name: /^home$/i })
+    fireEvent.click(homeButton)
 
     expect(onExit).toHaveBeenCalledTimes(1)
   })
@@ -338,6 +336,72 @@ describe('GameScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: /buy life/i }))
 
     expect(loadResumableGame(TEST_COUNTRIES, storage)?.player.geodes).toBe(400)
+  })
+
+  it('skips to the next turn without spending, losing, or winning anything', () => {
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Region · 50 geodes' }))
+    expect(screen.getByText('South America')).toBeInTheDocument()
+    expect(screen.getByText('950')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /^skip$/i }))
+
+    expect(screen.getByText('2')).toBeInTheDocument()
+    expect(screen.getByText('950')).toBeInTheDocument()
+    expect(screen.getByText('3')).toBeInTheDocument()
+    expect(screen.queryByText('South America')).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Region · 50 geodes' }),
+    ).toBeInTheDocument()
+    expect(screen.getAllByText('Starting clue')).toHaveLength(1)
+    expect(
+      screen.getByText(/submit a guess to see the result/i),
+    ).toBeInTheDocument()
+    expect(getGuessControls().guessInput).toBeEnabled()
+  })
+
+  it('skips immediately even while a resolved turn is waiting', () => {
+    render(
+      <GameScreen
+        countries={TEST_COUNTRIES}
+        random={alwaysSelectFirst}
+        config={manualContinueConfig}
+      />,
+    )
+    const { guessInput, submitButton } = getGuessControls()
+
+    fireEvent.change(guessInput, { target: { value: TEST_COUNTRIES[0].name } })
+    fireEvent.click(submitButton)
+    expect(screen.getByText(/earned 500 geodes/i)).toBeInTheDocument()
+    expect(screen.getByText('1500')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /^skip$/i }))
+
+    expect(screen.getByText('2')).toBeInTheDocument()
+    expect(screen.getByText('1500')).toBeInTheDocument()
+    expect(screen.queryByText(/earned 500 geodes/i)).not.toBeInTheDocument()
+    expect(getGuessControls().guessInput).toBeEnabled()
+  })
+
+  it('persists a skipped turn like any other gameplay change', async () => {
+    const storage = createMemoryStorage()
+    render(
+      <GameScreen
+        countries={TEST_COUNTRIES}
+        random={alwaysSelectFirst}
+        storage={storage}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /^skip$/i }))
+
+    await waitFor(() => {
+      const game = loadResumableGame(TEST_COUNTRIES, storage)
+      expect(game?.turn).toBe(2)
+      expect(game?.player.geodes).toBe(1000)
+      expect(game?.purchasedClueIds).toEqual([])
+    })
   })
 
   it('persists gameplay changes while playing', async () => {

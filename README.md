@@ -12,10 +12,13 @@ GeoStake is currently in early development. The application opens on a
 **landing screen** with a _New Game_ button (which starts a fresh game), a
 _Continue Game_ button (enabled whenever a saved game exists), and a
 _Settings_ button (currently a placeholder). The game itself is a single
-screen showing your geodes, lives, and turn, a mystery country, a tiered clue
-area, a country-name guess input, guess feedback, a reward for correctly
-solving a turn, and a way to start the next turn. A _Back to Landing_ control
-returns to the menu at any time. The current game is saved locally, so
+screen showing a three-column status area (geodes, lives, turn — each with a
+companion action), a mystery country, a tiered clue area, a country-name guess
+input, guess feedback, a reward for correctly solving a turn, and a way to
+start the next turn. On wider screens the clue tiers render in a two-column
+grid to use horizontal tablet space. A subtle _Home_ button returns to the menu
+at any time, and a debug _Skip_ button advances to the next turn for free. The
+current game is saved locally, so
 refreshing or reopening the app lets you continue where you left off. The
 application is powered by a canonical country dataset generated from the
 public-domain CIA World Factbook. Clues are revealed automatically and
@@ -30,11 +33,11 @@ not implemented yet.
 The application uses simple, strongly typed view state rather than a router.
 There are three views, each a small focused component:
 
-| View             | Description                                                                                                  |
-| ---------------- | ------------------------------------------------------------------------------------------------------------ |
-| `LandingScreen`  | Default view. GeoStake branding, **New Game**, **Continue Game** (enabled when a save exists), **Settings**. |
-| `GameScreen`     | The full gameplay screen, plus a _Back to Landing_ control.                                                  |
-| `SettingsScreen` | Placeholder page with a _Back to Landing_ control.                                                           |
+| View             | Description                                                                                                                     |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `LandingScreen`  | Default view. GeoStake branding, **New Game**, **Continue Game** (enabled when a save exists), **Settings**.                    |
+| `GameScreen`     | The full gameplay screen. Status columns for geodes (with **Home**), lives (with **Buy Life**), and turn (with debug **Skip**). |
+| `SettingsScreen` | Placeholder page with a _Back to Landing_ control.                                                                              |
 
 `App` owns a single `AppView` state (`'landing' | 'game' | 'settings'`,
 defined in `src/navigation/views.ts`) starting at `'landing'` and switches
@@ -178,6 +181,17 @@ that requires confirmation and resets everything — geodes, lives, and turn —
 their starting values. You can buy a life at any time during an active turn for
 `lifeCost` geodes (respecting `maxLives` and never going into negative geodes).
 Economy rules are pure, unit-tested functions in `src/game/economy.ts`.
+
+## Debug Skip
+
+While in development, a **Skip** button appears under the Turn column of the
+status bar. It advances immediately to a brand-new turn — a freshly selected
+mystery country and starting clue — without spending geodes, deducting a life,
+or awarding any reward. It works whether the current turn is still active or
+already resolved, and it is saved through the normal persistence pipeline. It
+is intended as a temporary development convenience and will be removed once
+real game systems (difficulty, other turn-advance mechanics) exist. The hook
+action is backed by the pure `skipTurn` function in `src/game/game.ts`.
 
 ## Country Data
 
