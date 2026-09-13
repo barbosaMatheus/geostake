@@ -10,4 +10,5 @@ export interface GameState {
   guessResult: GuessResult | null
   startingClueId: ClueId
   revealedClueIds: readonly ClueId[]
+  purchasedClueIds: readonly ClueId[]
 }

@@ -1,13 +1,11 @@
-import type { GeodeAmount, LifeCount } from '../types/player'
+import { ECONOMY_CONFIG, type EconomyConfig } from './economyConfig'
 
 export interface GameConfig {
-  startingGeodes: GeodeAmount
-  startingLives: LifeCount
   continueOnCorrectGuess: boolean
+  economy: EconomyConfig
 }
 
 export const GAME_CONFIG: GameConfig = {
-  startingGeodes: 1000,
-  startingLives: 3,
   continueOnCorrectGuess: true,
+  economy: ECONOMY_CONFIG,
 }

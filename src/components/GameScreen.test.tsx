@@ -86,7 +86,23 @@ describe('GameScreen', () => {
     expect(screen.queryByText(/was brazil/i)).not.toBeInTheDocument()
     expect(getGuessControls().guessInput).toBeEnabled()
     expect(screen.getAllByText('Starting clue')).toHaveLength(1)
-    expect(screen.getByText('1000')).toBeInTheDocument()
+    expect(screen.getByText('1500')).toBeInTheDocument()
+  })
+
+  it('reports the geode reward on a correctly solved turn', () => {
+    render(
+      <GameScreen
+        countries={TEST_COUNTRIES}
+        random={alwaysSelectFirst}
+        config={manualContinueConfig}
+      />,
+    )
+    const { guessInput, submitButton } = getGuessControls()
+
+    fireEvent.change(guessInput, { target: { value: TEST_COUNTRIES[0].name } })
+    fireEvent.click(submitButton)
+
+    expect(screen.getByText(/earned 500 geodes/i)).toBeInTheDocument()
   })
 
   it('shows positive feedback and waits for the player when auto-advance is disabled', () => {
@@ -208,10 +224,23 @@ describe('GameScreen', () => {
       screen.getByRole('button', { name: 'Region · 50 geodes' }),
     ).toBeInTheDocument()
     expect(screen.getAllByText('Starting clue')).toHaveLength(1)
-    expect(screen.getByText('950')).toBeInTheDocument()
+    expect(screen.getByText('1440')).toBeInTheDocument()
   })
 
-  it('shows game over and offers a new game when lives run out', () => {
+  it('buys a life and deducts its cost in geodes', () => {
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
+    const buyButton = screen.getByRole('button', {
+      name: 'Buy Life · 750 geodes',
+    })
+
+    fireEvent.click(buyButton)
+
+    expect(screen.getByText('4')).toBeInTheDocument()
+    expect(screen.getByText('250')).toBeInTheDocument()
+    expect(buyButton).toBeDisabled()
+  })
+
+  it('shows game over and offers a fresh turn when lives run out', () => {
     render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
     const { guessInput, submitButton } = getGuessControls()
 
@@ -222,17 +251,20 @@ describe('GameScreen', () => {
     fireEvent.change(guessInput, { target: { value: 'Atlantis' } })
     fireEvent.click(submitButton)
 
-    expect(screen.getByText(/game over/i)).toBeInTheDocument()
     expect(screen.getByText(/out of lives/i)).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: /start new game/i }),
+      screen.getByText(/the mystery country was brazil/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /begin next turn/i }),
     ).toBeInTheDocument()
     expect(getGuessControls().guessInput).toBeDisabled()
     expect(
       screen.getByRole('button', { name: 'Region · 50 geodes' }),
     ).toBeDisabled()
+    expect(screen.getByText('1000')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: /start new game/i }))
+    fireEvent.click(screen.getByRole('button', { name: /begin next turn/i }))
 
     expect(screen.getByText('1000')).toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument()

@@ -80,7 +80,7 @@ export function revealClue(
   clueId: ClueId,
   costMultiplier: number = CLUE_COST_MULTIPLIER,
 ): GameState {
-  if (state.guessResult !== null) {
+  if (state.guessResult !== null || state.player.lives <= 0) {
     return state
   }
   const definition = getClueDefinition(clueId)
@@ -104,5 +104,6 @@ export function revealClue(
       geodes: state.player.geodes - cost,
     },
     revealedClueIds: [...state.revealedClueIds, clueId],
+    purchasedClueIds: [...state.purchasedClueIds, clueId],
   }
 }

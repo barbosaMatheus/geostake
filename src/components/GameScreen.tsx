@@ -24,6 +24,7 @@ function GameScreen({
     submitGuess,
     startNextTurn,
     revealClue,
+    purchaseLife,
     lastIncorrectGuess,
   } = useGame(countries, config, random)
   const { player, mysteryCountry, guessResult } = gameState
@@ -32,7 +33,13 @@ function GameScreen({
   return (
     <main className="app">
       <GameTitle />
-      <StatusBar player={player} />
+      <StatusBar
+        player={player}
+        turn={gameState.turn}
+        economy={config.economy}
+        disabled={turnResolved}
+        onBuyLife={purchaseLife}
+      />
       <MysteryCountry
         country={mysteryCountry}
         revealed={guessResult?.outcome === 'correct'}
@@ -50,6 +57,7 @@ function GameScreen({
         guessResult={guessResult}
         lastIncorrectGuess={lastIncorrectGuess}
         lives={player.lives}
+        countryName={mysteryCountry.name}
         onNextTurn={startNextTurn}
       />
     </main>

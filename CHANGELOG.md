@@ -4,6 +4,42 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] - 2026-09-13
+
+### Added
+
+- Geode economy and turn rewards: a correct guess now awards geodes based on
+  the clues purchased during that turn
+  (`reward = baseReward − baseClueDeduction × Σ(tier × count)`), with a
+  configurable `minimumReward` floor so rewards never go below a set amount or
+  become negative.
+- Centralized economy configuration (`src/game/economyConfig.ts`): starting
+  geodes and lives, base reward, per-tier clue deduction, minimum reward, life
+  purchase cost, and maximum lives.
+- Purchased clues are now tracked separately from auto-revealed clues
+  (`purchasedClueIds` on `GameState`); the free tier-0 starting clue never
+  counts as a purchase and never reduces the reward.
+- A "Buy Life" control in the status bar that costs geodes, adds one life,
+  respects the maximum life count, and is disabled when unaffordable or the
+  turn is resolved.
+- Reward math, life purchases, and affordability checks as pure, unit-tested
+  functions in `src/game/economy.ts`.
+- The status bar now shows the current turn number.
+
+### Changed
+
+- Correct-guess feedback now reports the reward earned (for example, "You
+  earned 490 geodes!").
+- Running out of lives now ends the turn and reveals the mystery country
+  ("Out of lives. The mystery country was [name]."), and starting the next turn
+  restores lives while keeping the player's accumulated geodes instead of
+  resetting the whole game.
+- `startingGeodes` and `startingLives` moved from `GAME_CONFIG` into the new
+  `ECONOMY_CONFIG`, which `GAME_CONFIG` now references.
+- Application version bumped to `0.5.0`.
+
+[0.5.0]: https://github.com/barbosaMatheus/geostake
+
 ## [0.4.0] - 2026-09-13
 
 ### Changed

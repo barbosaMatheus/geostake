@@ -9,13 +9,14 @@ life. The game runs fully offline once loaded, with no backend.
 > How much information are you willing to buy before making your guess?
 
 GeoStake is currently in early development. A playable game screen is
-implemented: it shows your geodes and lives, a mystery country, a tiered clue
-area, a country-name guess input, guess feedback, and a way to start the next
-turn. The application is powered by a canonical country dataset generated from
-the public-domain CIA World Factbook. Clues are revealed automatically and
-purchased with geodes according to a centralized cost multiplier; the geode
-reward economy, persistence, country flag/outline assets, difficulty modes, and
-PWA support are not implemented yet.
+implemented: it shows your geodes, lives, and turn, a mystery country, a tiered
+clue area, a country-name guess input, guess feedback, a reward for correctly
+solving a turn, and a way to start the next turn. The application is powered by
+a canonical country dataset generated from the public-domain CIA World
+Factbook. Clues are revealed automatically and purchased with geodes according
+to a centralized cost multiplier, and correct guesses award geodes according to
+a tier-weighted reward system. Persistence, country flag/outline assets,
+difficulty modes, and PWA support are not implemented yet.
 
 ## Clue System
 
@@ -44,17 +45,56 @@ system. Clue rules live in pure, unit-tested functions in `src/game/clues.ts`.
 
 ## Game Configuration
 
-Game rules that are not clue data live in `src/game/config.ts` under
-`GAME_CONFIG`:
+Game rules that are not clue data or economy values live in `src/game/config.ts`
+under `GAME_CONFIG`:
 
 | Setting                  | Default | Description                                                                                                                                                                            |
 | ------------------------ | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `startingGeodes`         | `1000`  | Geodes the player begins a game with.                                                                                                                                                  |
-| `startingLives`          | `3`     | Lives the player begins a game with.                                                                                                                                                   |
 | `continueOnCorrectGuess` | `true`  | When enabled, a correct guess immediately starts the next turn. When disabled, the turn stays open on the feedback screen and clue purchases are disabled until the next round starts. |
+
+`GAME_CONFIG` also carries a reference to `ECONOMY_CONFIG`
+(`src/game/economyConfig.ts`), which holds the player-economy numbers described
+below.
 
 This is centralized configuration, not yet user-configurable in the UI; a
 settings menu is planned for a later phase.
+
+## Economy and Rewards
+
+The geode economy is centralized in `src/game/economyConfig.ts` under
+`ECONOMY_CONFIG`:
+
+| Setting             | Default | Description                                              |
+| ------------------- | ------- | -------------------------------------------------------- |
+| `startingGeodes`    | `1000`  | Geodes the player begins a game with.                    |
+| `startingLives`     | `3`     | Lives the player begins a game with.                     |
+| `baseReward`        | `500`   | Geodes awarded for a correct guess bought with no clues. |
+| `baseClueDeduction` | `10`    | Geodes subtracted per unit of clue-tier weight.          |
+| `minimumReward`     | `200`   | The floor below which a guess reward can never drop.     |
+| `lifeCost`          | `750`   | Geodes required to buy one life.                         |
+| `maxLives`          | `99`    | The maximum number of lives a player can hold.           |
+
+The reward for solving a turn is:
+
+```text
+reward = baseReward − (baseClueDeduction × Σ(tier × count of purchased clues in that tier))
+```
+
+The starting free tier-0 clue is revealed automatically and never counts as
+purchased. Each purchased clue adds its tier number to the penalty weight, so
+buying more revealing (higher-tier) clues shrinks the reward, which can never
+fall below `minimumReward`. Because the weight is simply the tier number,
+future tiers (5, 6, ...) are rewarded automatically without changes.
+
+Gameplay state is split into player state (geodes, lives, carried across turns)
+and turn state (mystery country, revealed clues, purchased clues, guess
+result). Correct guesses award geodes; incorrect guesses cost one life and keep
+the turn open. A correct guess ends the turn. Running out of lives also ends
+the turn without a reward and reveals the country; the next turn keeps your
+accumulated geodes and restores lives to `startingLives`. You can buy a life at
+any time during an active turn for `lifeCost` geodes (respecting `maxLives` and
+never going into negative geodes). Economy rules are pure, unit-tested
+functions in `src/game/economy.ts`.
 
 ## Country Data
 

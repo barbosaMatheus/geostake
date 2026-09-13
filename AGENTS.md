@@ -1099,19 +1099,55 @@ Gameplay rules live as pure, testable functions in `src/game/clues.ts` (availabi
 
 Turn-state conventions:
 
-* Each turn tracks `startingClueId` and `revealedClueIds` on `GameState` (clue identifiers only; the `Country` is the source of truth for clue values).
+* Each turn tracks `startingClueId`, `revealedClueIds`, and `purchasedClueIds` on `GameState` (clue identifiers only; the `Country` is the source of truth for clue values).
 * At the start of a turn exactly one available tier-0 clue is randomly selected and auto-revealed; population is the final fallback.
 * The starting clue is the only free-tier clue offered during its turn: non-starting tier-0 clues are completely omitted from the UI and cannot be revealed (`getTurnClues` in `src/game/clues.ts` drives what the panel offers, and `revealClue` rejects tier-0 reveals that are not `startingClueId`). Every new turn re-rolls the starting clue, so an omitted free clue has a fresh chance next round.
 * A clue whose optional data is missing for the current country is never purchasable.
 * A revealed clue cannot be purchased again; revealing is a no-op when the clue is already revealed, unavailable, or unaffordable.
-* Only a correct guess resolves a turn (`guessResult` is set on `GameState`). An incorrect guess deducts a life and leaves the turn open: the same mystery country stays active, clue purchases remain available, and the player can guess again.
-* The transient "not-quite" feedback after an incorrect guess is UI state (`lastIncorrectGuess` on `useGame`), not part of `GameState`; it is cleared by the next guess, a correct guess, or game over.
+* Only a correct guess resolves a turn with a reward (`guessResult` outcome `'correct'`, including `geodesAwarded`). An incorrect guess deducts a life and leaves the turn open while lives remain: the same mystery country stays active, clue purchases remain available, and the player can guess again.
+* The transient "not-quite" feedback after an incorrect guess is UI state (`lastIncorrectGuess` on `useGame`), not part of `GameState`; it is cleared by the next guess, a correct guess, or running out of lives.
 * A resolved turn (one ended by a correct guess) is closed to further clue purchases: `revealClue` is a no-op while `guessResult` is set, and the UI disables the clue panel. Clue purchasing resumes when the next turn starts.
-* Running out of lives (`lives === 0`) is a separate game-over state: the UI locks the guess input and clue panel and offers "Start New Game". `startNextTurn` detects `lives <= 0` and resets the game with `createInitialGameState` instead of advancing a dead turn.
+* Running out of lives (`lives === 0`) closes the turn with an `'incorrect'` `GuessResult`: the UI locks the guess input and clue panel and reveals the country ("Out of lives. The mystery country was [name]."). `startNextTurn` then begins the next turn with restored lives while preserving the player's accumulated geodes (the economy is not reset).
 * `GAME_CONFIG.continueOnCorrectGuess` (default `true`) controls whether a correct guess automatically starts the next turn via `resolveGuess`. When `false`, a correct guess leaves the turn resolved on the feedback screen instead of auto-advancing. A future settings menu may surface this value.
-* Starting a new turn resets the revealed-clue state to the new starting clue only.
+* Starting a new turn resets the revealed/purchased clue state to the new starting clue only.
 
 Random selection points (country choice, starting clue) accept an injectable `random: () => number` dependency for deterministic tests. Prefer the shared helpers in `src/game/random.ts` (`randomIndex`, `pickRandom`).
+
+---
+
+## 38. Economy, Rewards, and Life Purchases
+
+The geode economy is domain logic, centralized and testable, distinct from both the country dataset and the React UI.
+
+The authoritative source of truth is `src/game/economyConfig.ts` (`EconomyConfig` + `ECONOMY_CONFIG`):
+
+* `startingGeodes` (1000) and `startingLives` (3) — the resources a new game begins with.
+* `baseReward` (500) — the full reward for a correct guess bought with no clues.
+* `baseClueDeduction` (10) — geodes subtracted per unit of clue-tier weight.
+* `minimumReward` (200) — the floor below which a reward can never drop.
+* `lifeCost` (750) — the geodes a life costs to buy.
+* `maxLives` (99) — the maximum lives a player can hold.
+
+Do not hard-code economy numbers in components, hooks, or game-logic files.
+
+Economy calculations are pure, testable functions in `src/game/economy.ts`: `countPurchasedCluesByTier`, `calculateRewardDeduction`, `calculateGuessReward`, `applyGeodeReward`, `canPurchaseLife`, and `purchaseLife`. UI components and JSX event handlers must not reimplement these rules.
+
+Reward rules:
+
+* The reward for solving a turn is `reward = baseReward − (baseClueDeduction × Σ(tier × count))`, where `count` is the number of purchased clues in that tier. The result is clamped to `minimumReward`, so a reward can never go below the configured floor (or become negative).
+* The starting tier-0 clue is auto-revealed and never counts as purchased; free-tier clues contribute zero weight. Because the penalty weight is simply the tier number, future tiers (5, 6, ...) are rewarded automatically without restructuring.
+* `revealClue` records every paid reveal in both `revealedClueIds` and `purchasedClueIds`; the reward is computed only from `purchasedClueIds`. The tier-0 starting clue appears in `revealedClueIds` but never in `purchasedClueIds`.
+* A correct guess awards the computed reward and records `geodesAwarded` on the correct `GuessResult`. An incorrect guess awards nothing and deducts a life.
+
+State split:
+
+* `GameState` separates player state (`player.geodes`, `player.lives` — carried across turns) from turn state (`mysteryCountry`, `startingClueId`, `revealedClueIds`, `purchasedClueIds`, `guessResult` — reset each turn).
+* `startNextTurn` resets the turn state, selects a new country, and preserves geodes and lives. When the previous turn was lost to zero lives, lives are restored to `startingLives` and accumulated geodes are preserved (the economy is not reset).
+
+Life purchases:
+
+* Buying a life is an explicit player action (`purchaseLife` on `useGame`, wired to the "Buy Life" control in `StatusBar`). It costs `lifeCost` geodes and adds one life, never producing negative geodes, and never exceeding `maxLives`.
+* A life purchase is unavailable (disabled) when the player lacks geodes, is already at `maxLives`, or the current turn is resolved (guessed or out of lives).
 
 ---
 

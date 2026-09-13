@@ -79,10 +79,17 @@ body {
 }
 
 .status-bar {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   margin: 1.25rem 0 0;
+}
+
+.resource-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0;
 }
 
 .resource {
@@ -108,6 +115,41 @@ body {
   font-weight: 800;
   min-width: 2ch;
   text-align: center;
+}
+
+.life-purchase {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.life-buy-button {
+  font: inherit;
+  font-weight: 700;
+  padding: 0.6rem 1.25rem;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.life-buy-button:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.life-buy-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  color: var(--color-muted);
+}
+
+.life-purchase-note {
+  margin: 0;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--color-danger);
 }
 
 .section-card {

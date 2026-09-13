@@ -196,6 +196,7 @@ describe('revealClue', () => {
 
     expect(next.player.geodes).toBe(state.player.geodes - 50)
     expect(next.revealedClueIds).toContain('region')
+    expect(next.purchasedClueIds).toContain('region')
   })
 
   it('deducts the multiplied cost for higher-tier clues', () => {
@@ -204,6 +205,7 @@ describe('revealClue', () => {
 
     expect(next.player.geodes).toBe(japanState.player.geodes - 375)
     expect(next.revealedClueIds).toContain('internet-country-code')
+    expect(next.purchasedClueIds).toContain('internet-country-code')
   })
 
   it('does not allow the same clue to be purchased twice', () => {
@@ -212,6 +214,7 @@ describe('revealClue', () => {
 
     expect(again).toBe(state)
     expect(again.player.geodes).toBe(state.player.geodes)
+    expect(again.purchasedClueIds).toEqual(state.purchasedClueIds)
   })
 
   it('does not reveal a clue the player cannot afford', () => {
@@ -224,6 +227,7 @@ describe('revealClue', () => {
     expect(next).toBe(state)
     expect(next.player.geodes).toBe(40)
     expect(next.revealedClueIds).not.toContain('region')
+    expect(next.purchasedClueIds).not.toContain('region')
   })
 
   it('does not change game state for an unavailable clue', () => {
@@ -248,6 +252,8 @@ describe('revealClue', () => {
     const next = revealClue(state, 'region')
 
     expect(next.revealedClueIds).toContain(state.startingClueId)
+    expect(next.purchasedClueIds).toEqual(['region'])
+    expect(next.purchasedClueIds).not.toContain(state.startingClueId)
   })
 
   it('does not reveal clues after the turn has been resolved', () => {
@@ -256,6 +262,7 @@ describe('revealClue', () => {
 
     expect(next).toBe(state)
     expect(next.revealedClueIds).not.toContain('region')
+    expect(next.purchasedClueIds).not.toContain('region')
   })
 })
 
@@ -265,21 +272,24 @@ describe('clue state across turns', () => {
 
     expect(state.revealedClueIds).toHaveLength(1)
     expect(state.revealedClueIds[0]).toBe(state.startingClueId)
+    expect(state.purchasedClueIds).toEqual([])
     const startingDefinition = CLUES.find(
       (clue) => clue.id === state.startingClueId,
     )
     expect(startingDefinition?.tier).toBe(0)
   })
 
-  it('clears previously revealed clues when a new turn starts', () => {
+  it('clears previously revealed and purchased clues when a new turn starts', () => {
     const state = revealClue(firstState(), 'region')
     expect(state.revealedClueIds).toContain('region')
+    expect(state.purchasedClueIds).toEqual(['region'])
 
     const newTurn = nextTurnState(state)
 
     expect(newTurn.revealedClueIds).toHaveLength(1)
     expect(newTurn.revealedClueIds[0]).toBe(newTurn.startingClueId)
     expect(newTurn.revealedClueIds).not.toContain('region')
+    expect(newTurn.purchasedClueIds).toEqual([])
   })
 
   it('selects a new starting clue for the new turn when randomness asks for it', () => {

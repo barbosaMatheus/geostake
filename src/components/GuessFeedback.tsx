@@ -4,6 +4,7 @@ interface GuessFeedbackProps {
   guessResult: GuessResult | null
   lastIncorrectGuess: LastIncorrectGuess | null
   lives: number
+  countryName: string
   onNextTurn: () => void
 }
 
@@ -11,6 +12,7 @@ function GuessFeedback({
   guessResult,
   lastIncorrectGuess,
   lives,
+  countryName,
   onNextTurn,
 }: GuessFeedbackProps) {
   if (lives === 0) {
@@ -21,14 +23,14 @@ function GuessFeedback({
         aria-live="polite"
       >
         <p className="guess-feedback-game-over">
-          Game over - you&apos;re out of lives. Start a new game to play again.
+          Out of lives. The mystery country was {countryName}.
         </p>
         <button
           className="button-primary next-turn-button"
           type="button"
           onClick={onNextTurn}
         >
-          Start New Game
+          Begin Next Turn
         </button>
       </section>
     )
@@ -43,7 +45,7 @@ function GuessFeedback({
       >
         <p className="guess-feedback-correct">
           That&apos;s right - the mystery country was {guessResult.country.name}
-          . Nice work!
+          . You earned {guessResult.geodesAwarded} geodes!
         </p>
         <button
           className="button-primary next-turn-button"

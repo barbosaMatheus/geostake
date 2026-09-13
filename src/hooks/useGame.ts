@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { revealClue as applyClueReveal } from '../game/clues'
 import { GAME_CONFIG, type GameConfig } from '../game/config'
+import { purchaseLife as applyLifePurchase } from '../game/economy'
 import {
   createInitialGameState,
   isCorrectGuess,
@@ -58,15 +59,23 @@ export function useGame(
     if (current.guessResult === null && current.player.lives > 0) {
       return
     }
-    setGameState(advanceTurn(current, countries, random))
+    setGameState(advanceTurn(current, countries, random, config.economy))
     setLastIncorrectGuess(null)
-  }, [countries, random])
+  }, [countries, config, random])
+
+  const purchaseLife = useCallback(() => {
+    setGameState((current) => ({
+      ...current,
+      player: applyLifePurchase(current.player, config.economy),
+    }))
+  }, [config])
 
   return {
     gameState,
     submitGuess,
     startNextTurn,
     revealClue,
+    purchaseLife,
     lastIncorrectGuess,
   }
 }

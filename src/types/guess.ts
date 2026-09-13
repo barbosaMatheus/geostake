@@ -1,11 +1,12 @@
 import type { Country } from './country'
-import type { LifeCount } from './player'
+import type { GeodeAmount, LifeCount } from './player'
 
 export interface CorrectGuessResult {
   outcome: 'correct'
   guessedName: string
   country: Country
   livesRemaining: LifeCount
+  geodesAwarded: GeodeAmount
 }
 
 export interface IncorrectGuessResult {

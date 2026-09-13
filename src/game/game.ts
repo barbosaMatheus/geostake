@@ -3,6 +3,8 @@ import type { GameState } from '../types/game'
 import type { GuessResult } from '../types/guess'
 import { GAME_CONFIG, type GameConfig } from './config'
 import { selectStartingClue } from './clues'
+import { applyGeodeReward, calculateGuessReward } from './economy'
+import { ECONOMY_CONFIG, type EconomyConfig } from './economyConfig'
 import { selectMysteryCountry } from './selectCountry'
 
 export function normalizeCountryName(name: string): string {
@@ -25,34 +27,50 @@ export function createInitialGameState(
   const startingClueId = selectStartingClue(mysteryCountry, random)
   return {
     player: {
-      geodes: config.startingGeodes,
-      lives: config.startingLives,
+      geodes: config.economy.startingGeodes,
+      lives: config.economy.startingLives,
     },
     mysteryCountry,
     turn: 1,
     guessResult: null,
     startingClueId,
     revealedClueIds: [startingClueId],
+    purchasedClueIds: [],
   }
 }
 
-export function applyGuess(state: GameState, guessedName: string): GameState {
+export function applyGuess(
+  state: GameState,
+  guessedName: string,
+  economy: EconomyConfig = ECONOMY_CONFIG,
+): GameState {
   if (state.guessResult !== null) {
     return state
   }
   const correct = isCorrectGuess(guessedName, state.mysteryCountry)
-  const player = {
-    ...state.player,
-    lives: Math.max(0, state.player.lives - (correct ? 0 : 1)),
-  }
   if (!correct) {
-    return { ...state, player }
+    const player = {
+      ...state.player,
+      lives: Math.max(0, state.player.lives - 1),
+    }
+    if (player.lives > 0) {
+      return { ...state, player }
+    }
+    const guessResult: GuessResult = {
+      outcome: 'incorrect',
+      guessedName,
+      livesRemaining: 0,
+    }
+    return { ...state, player, guessResult }
   }
+  const reward = calculateGuessReward(state.purchasedClueIds, economy)
+  const player = applyGeodeReward(state.player, reward)
   const guessResult: GuessResult = {
     outcome: 'correct',
     guessedName,
     country: state.mysteryCountry,
     livesRemaining: player.lives,
+    geodesAwarded: reward,
   }
   return { ...state, player, guessResult }
 }
@@ -67,12 +85,12 @@ export function resolveGuess(
   if (state.guessResult !== null) {
     return state
   }
-  const afterGuess = applyGuess(state, guessedName)
+  const afterGuess = applyGuess(state, guessedName, config.economy)
   if (
     config.continueOnCorrectGuess &&
     afterGuess.guessResult?.outcome === 'correct'
   ) {
-    return startNextTurn(afterGuess, countries, random)
+    return startNextTurn(afterGuess, countries, random, config.economy)
   }
   return afterGuess
 }
@@ -81,6 +99,7 @@ export function startNextTurn(
   state: GameState,
   countries: readonly Country[],
   random: () => number = Math.random,
+  economy: EconomyConfig = ECONOMY_CONFIG,
 ): GameState {
   if (state.guessResult === null && state.player.lives > 0) {
     return state
@@ -88,17 +107,18 @@ export function startNextTurn(
   if (countries.length === 0) {
     throw new Error('Cannot start a new turn without any countries')
   }
-  if (state.player.lives <= 0) {
-    return createInitialGameState(countries, GAME_CONFIG, random)
-  }
+  const lives =
+    state.player.lives > 0 ? state.player.lives : economy.startingLives
   const mysteryCountry = selectMysteryCountry(countries, random)
   const startingClueId = selectStartingClue(mysteryCountry, random)
   return {
     ...state,
     turn: state.turn + 1,
     mysteryCountry,
+    player: { ...state.player, lives },
     guessResult: null,
     startingClueId,
     revealedClueIds: [startingClueId],
+    purchasedClueIds: [],
   }
 }
