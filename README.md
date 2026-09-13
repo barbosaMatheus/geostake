@@ -146,6 +146,30 @@ the `world`, `meta`, and `oceans` directories), and writes `countries.json` and
 `EXCLUDED.md`. It is deterministic. Set `FACTBOOK_PATH` to point at a different
 FactsBook checkout if it is not located at the default path.
 
+### Visual clue asset coverage check
+
+```sh
+npm run check:visual-clues
+```
+
+A development-only validation that measures how many canonical countries are
+covered by the proposed visual-clue asset sources (`country-flag-icons` for
+flags and `@amplifiedhq/countries-atlas` for country outlines). It writes the
+report to `vis-clues-results.md` at the project root. See that report for
+current findings (the atlas package ships metadata only, so outline coverage is
+currently 0).
+
+### Outline asset coverage check
+
+```sh
+npm run check:outline-coverage
+```
+
+A development-only validation that measures how many canonical countries have
+a usable outline in `@rembish/iso-topojson`. It writes the report to
+`vis-clues-outline-results.md` at the project root. All 230 canonical
+countries currently resolve to a matching geometry.
+
 ### License and attribution
 
 The FactsBook data is derived from the CIA World Factbook, which is a public
