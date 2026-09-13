@@ -1080,6 +1080,35 @@ The intended architecture is a client-side game that can be built, installed, pl
 
 ---
 
+# Clue System
+
+## 37. Keep Clues Data-Driven and Centrally Configured
+
+Clue rules are domain logic, distinct from both the country dataset and the React UI.
+
+The clue system uses **numeric tiers** (`0` Free, `1` Low, `2` Medium, `3` High, `4` Very High). Tiers are intentionally open-ended numbers so tiers `5`, `6`, etc. can be added later without restructuring the system.
+
+The authoritative source of truth is `src/game/clueConfig.ts`:
+
+* `CLUES` — the data-driven list of `ClueDefinition` entries. Each entry owns its `id`, `tier`, `baseCost`, display `label`, and the pure functions `isAvailable`, `getValue`, and `formatValue`.
+* `CLUE_COST_MULTIPLIER` — the current cost multiplier, defaulting to `5` (the future "normal" difficulty). A clue's current cost is `baseCost × CLUE_COST_MULTIPLIER`. Do not hard-code clue costs or tiers in components or game-logic files.
+
+Base costs are the normalized source values (0/10/20/50/75); the multiplier produces the in-game costs (0/50/100/250/375). Difficulty modes are **not** implemented; the multiplier is centralized so a future difficulty selector can change it without touching clue logic.
+
+Gameplay rules live as pure, testable functions in `src/game/clues.ts` (availability, value extraction, formatting, costing, random tier-0 starting-clue selection with a `population` fallback, and `revealClue`). UI components and JSX event handlers must not reimplement these rules.
+
+Turn-state conventions:
+
+* Each turn tracks `startingClueId` and `revealedClueIds` on `GameState` (clue identifiers only; the `Country` is the source of truth for clue values).
+* At the start of a turn exactly one available tier-0 clue is randomly selected and auto-revealed; population is the final fallback.
+* A clue whose optional data is missing for the current country is never purchasable.
+* A revealed clue cannot be purchased again; revealing is a no-op when the clue is already revealed, unavailable, or unaffordable.
+* Starting a new turn resets the revealed-clue state to the new starting clue only.
+
+Random selection points (country choice, starting clue) accept an injectable `random: () => number` dependency for deterministic tests. Prefer the shared helpers in `src/game/random.ts` (`randomIndex`, `pickRandom`).
+
+---
+
 # Agent Workflow
 
 When beginning work on a task:

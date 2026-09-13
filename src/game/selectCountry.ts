@@ -1,4 +1,5 @@
 import type { Country } from '../types/country'
+import { randomIndex } from './random'
 
 export function selectMysteryCountry(
   countries: readonly Country[],
@@ -7,9 +8,5 @@ export function selectMysteryCountry(
   if (countries.length === 0) {
     throw new Error('Cannot select a mystery country from an empty collection')
   }
-  const index = Math.min(
-    countries.length - 1,
-    Math.max(0, Math.floor(random() * countries.length)),
-  )
-  return countries[index]
+  return countries[randomIndex(countries.length, random)]
 }

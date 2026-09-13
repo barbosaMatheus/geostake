@@ -4,7 +4,45 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
-## [0.2.0] - 2026-09-12
+## [0.3.0] - 2026-09-13
+
+### Added
+
+- Five-tier clue system with numeric tiers (0 Free, 1 Low, 2 Medium, 3 High,
+  4 Very High): population, land area, population density, and coastline at
+  tier 0; region and hemisphere at tier 1; lowest and highest elevation at
+  tier 2; capital and national colors at tier 3; internet country code at
+  tier 4.
+- The clue model is data-driven (`src/game/clueConfig.ts`), so future tiers
+  and clues can be added without restructuring the core system.
+- Centralized per-tier base costs (0/10/20/50/75) combined with a centralized
+  clue cost multiplier (`CLUE_COST_MULTIPLIER`, default `5`) that produces the
+  current in-game costs (0/50/100/250/375) and is ready for future difficulty
+  modes.
+- Pure, unit-tested clue logic (`src/game/clues.ts`): availability, value
+  extraction, value formatting, cost calculation, random tier-0 starting-clue
+  selection with a population fallback, and clue revealing.
+- Game state now tracks the current turn's `startingClueId` and
+  `revealedClueIds`; starting a new turn clears the previous turn's revealed
+  clues and randomly selects a new free starting clue.
+- Clue panel UI grouped by tier showing revealed values, current costs,
+  unaffordable/unavailable states, an auto-revealed starting clue marker, and
+  per-clue purchase controls that deduct geodes.
+- Unit tests for clue tiers, base costs, multiplier math, random
+  starting-clue selection, population fallback, availability, value
+  extraction, cost deduction, duplicate/unaffordable/unavailable purchase
+  protection, and clue-state reset on new turns.
+
+### Changed
+
+- Replaced the single static starting-clue line with the tiered clue area; the
+  mystery-country card no longer renders the static `startingClue` string.
+- `selectCountry` and clue selection now share a small deterministic random
+  helper (`src/game/random.ts`).
+- Application version bumped to `0.3.0`.
+
+[0.3.0]: https://github.com/barbosaMatheus/geostake
+[0.2.0]: https://github.com/barbosaMatheus/geostake
 
 ### Added
 

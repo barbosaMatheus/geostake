@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { TEST_COUNTRIES } from '../tests/fixtures'
 import type { GameState } from '../types/game'
 import { GAME_CONFIG } from './config'
+import { revealClue } from './clues'
 import {
   applyGuess,
   createInitialGameState,
@@ -70,6 +71,17 @@ describe('createInitialGameState', () => {
 
   it('throws when no countries are available', () => {
     expect(() => createInitialGameState([])).toThrow()
+  })
+
+  it('reveals exactly one tier zero starting clue on the first turn', () => {
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+
+    expect(state.revealedClueIds).toHaveLength(1)
+    expect(state.revealedClueIds[0]).toBe(state.startingClueId)
   })
 })
 
@@ -173,5 +185,21 @@ describe('startNextTurn', () => {
     )
 
     expect(() => startNextTurn(resolved, [])).toThrow()
+  })
+
+  it('clears previously revealed clues when the next turn starts', () => {
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    const withPurchasedClue = revealClue(state, 'region')
+    const resolved = applyGuess(withPurchasedClue, 'Atlantis')
+    const next = startNextTurn(resolved, TEST_COUNTRIES, alwaysSelectFirst)
+
+    expect(next.revealedClueIds).toHaveLength(1)
+    expect(next.revealedClueIds[0]).toBe(next.startingClueId)
+    expect(next.revealedClueIds).not.toContain('region')
+    expect(next.player.geodes).toBe(withPurchasedClue.player.geodes)
   })
 })

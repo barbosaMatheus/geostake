@@ -15,7 +15,6 @@ function MysteryCountry({ country, revealed }: MysteryCountryProps) {
       <p className="mystery-country-name" aria-live="polite">
         {revealed ? country.name : '?????'}
       </p>
-      <p className="clue">{country.startingClue}</p>
     </section>
   )
 }

@@ -8,13 +8,37 @@ life. The game runs fully offline once loaded, with no backend.
 
 > How much information are you willing to buy before making your guess?
 
-GeoStake is currently in early development. The first playable game screen is
-implemented: it shows your geodes and lives, a mystery country with a starting
-clue, a country-name guess input, guess feedback, and a way to start the next
+GeoStake is currently in early development. A playable game screen is
+implemented: it shows your geodes and lives, a mystery country, a tiered clue
+area, a country-name guess input, guess feedback, and a way to start the next
 turn. The application is powered by a canonical country dataset generated from
-the public-domain CIA World Factbook. The clue purchasing system, geode
-economy, persistence, country flag/outline assets, and PWA support are not
-implemented yet.
+the public-domain CIA World Factbook. Clues are revealed automatically and
+purchased with geodes according to a centralized cost multiplier; the geode
+reward economy, persistence, country flag/outline assets, difficulty modes, and
+PWA support are not implemented yet.
+
+## Clue System
+
+Clues are grouped into five numeric tiers. One free tier-0 clue is randomly
+selected and revealed at the start of every turn; every other clue must be
+purchased with geodes, and clues whose data is missing for the current country
+cannot be purchased.
+
+| Tier | Name      | Clues                                                | Base Cost |
+| ---- | --------- | ---------------------------------------------------- | --------: |
+| 0    | Free      | Population, Land Area, Population Density, Coastline |         0 |
+| 1    | Low       | Region, Hemisphere                                   |        10 |
+| 2    | Medium    | Lowest Elevation, Highest Elevation                  |        20 |
+| 3    | High      | Capital, National Colors                             |        50 |
+| 4    | Very High | Internet Country Code                                |        75 |
+
+The current cost of a clue is its base cost times the centralized
+`CLUE_COST_MULTIPLIER` (default `5`, the normal-difficulty multiplier), so the
+in-game costs are currently 0 / 50 / 100 / 250 / 375 geodes. The multiplier
+lives in `src/game/clueConfig.ts` and is designed to make future difficulty
+modes change only that value. Clue tiers and definitions are data-driven, so
+additional tiers (5, 6, ...) and clues can be added without restructuring the
+system. Clue rules live in pure, unit-tested functions in `src/game/clues.ts`.
 
 ## Country Data
 

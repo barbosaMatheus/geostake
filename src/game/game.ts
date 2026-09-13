@@ -2,6 +2,7 @@ import type { Country } from '../types/country'
 import type { GameState } from '../types/game'
 import type { GuessResult } from '../types/guess'
 import { GAME_CONFIG, type GameConfig } from './config'
+import { selectStartingClue } from './clues'
 import { selectMysteryCountry } from './selectCountry'
 
 export function normalizeCountryName(name: string): string {
@@ -20,14 +21,18 @@ export function createInitialGameState(
   if (countries.length === 0) {
     throw new Error('Cannot start a game without any countries')
   }
+  const mysteryCountry = selectMysteryCountry(countries, random)
+  const startingClueId = selectStartingClue(mysteryCountry, random)
   return {
     player: {
       geodes: config.startingGeodes,
       lives: config.startingLives,
     },
-    mysteryCountry: selectMysteryCountry(countries, random),
+    mysteryCountry,
     turn: 1,
     guessResult: null,
+    startingClueId,
+    revealedClueIds: [startingClueId],
   }
 }
 
@@ -66,10 +71,14 @@ export function startNextTurn(
   if (countries.length === 0) {
     throw new Error('Cannot start a new turn without any countries')
   }
+  const mysteryCountry = selectMysteryCountry(countries, random)
+  const startingClueId = selectStartingClue(mysteryCountry, random)
   return {
     ...state,
     turn: state.turn + 1,
-    mysteryCountry: selectMysteryCountry(countries, random),
+    mysteryCountry,
     guessResult: null,
+    startingClueId,
+    revealedClueIds: [startingClueId],
   }
 }
