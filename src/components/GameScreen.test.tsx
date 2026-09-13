@@ -139,7 +139,7 @@ describe('GameScreen', () => {
     ).toBeInTheDocument()
   })
 
-  it('shows negative feedback and reduces lives on an incorrect guess', () => {
+  it('keeps the guess input and clue panel active after an incorrect guess', () => {
     render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
     const { guessInput, submitButton } = getGuessControls()
 
@@ -148,32 +148,58 @@ describe('GameScreen', () => {
 
     expect(screen.getByText(/not quite/i)).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
+    expect(guessInput).toBeEnabled()
+    expect(
+      screen.getByRole('button', { name: 'Region · 50 geodes' }),
+    ).toBeEnabled()
+    expect(
+      screen.queryByRole('button', { name: /start next turn/i }),
+    ).not.toBeInTheDocument()
+
+    fireEvent.change(guessInput, { target: { value: 'Brazil' } })
+    expect(submitButton).toBeEnabled()
   })
 
-  it('starts a new turn after a guess and clears the feedback', () => {
-    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
+  it('starts a new turn after a correct guess and clears the feedback', () => {
+    render(
+      <GameScreen
+        countries={TEST_COUNTRIES}
+        random={alwaysSelectFirst}
+        config={manualContinueConfig}
+      />,
+    )
     const { guessInput, submitButton } = getGuessControls()
 
-    fireEvent.change(guessInput, { target: { value: 'Atlantis' } })
+    fireEvent.change(guessInput, { target: { value: TEST_COUNTRIES[0].name } })
     fireEvent.click(submitButton)
+    expect(
+      screen.getByRole('button', { name: /start next turn/i }),
+    ).toBeInTheDocument()
+
     fireEvent.click(screen.getByRole('button', { name: /start next turn/i }))
 
     expect(
       screen.getByText(/submit a guess to see the result/i),
     ).toBeInTheDocument()
-    expect(screen.queryByText(/not quite/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/was brazil/i)).not.toBeInTheDocument()
     expect(getGuessControls().guessInput).toBeEnabled()
   })
 
   it('resets the clue state when starting a new turn', () => {
-    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
+    render(
+      <GameScreen
+        countries={TEST_COUNTRIES}
+        random={alwaysSelectFirst}
+        config={manualContinueConfig}
+      />,
+    )
     const { guessInput, submitButton } = getGuessControls()
 
     fireEvent.click(screen.getByRole('button', { name: 'Region · 50 geodes' }))
     expect(screen.getByText('South America')).toBeInTheDocument()
     expect(screen.getByText('950')).toBeInTheDocument()
 
-    fireEvent.change(guessInput, { target: { value: 'Atlantis' } })
+    fireEvent.change(guessInput, { target: { value: TEST_COUNTRIES[0].name } })
     fireEvent.click(submitButton)
     fireEvent.click(screen.getByRole('button', { name: /start next turn/i }))
 
@@ -183,5 +209,36 @@ describe('GameScreen', () => {
     ).toBeInTheDocument()
     expect(screen.getAllByText('Starting clue')).toHaveLength(1)
     expect(screen.getByText('950')).toBeInTheDocument()
+  })
+
+  it('shows game over and offers a new game when lives run out', () => {
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
+    const { guessInput, submitButton } = getGuessControls()
+
+    fireEvent.change(guessInput, { target: { value: 'Atlantis' } })
+    fireEvent.click(submitButton)
+    fireEvent.change(guessInput, { target: { value: 'Atlantis' } })
+    fireEvent.click(submitButton)
+    fireEvent.change(guessInput, { target: { value: 'Atlantis' } })
+    fireEvent.click(submitButton)
+
+    expect(screen.getByText(/game over/i)).toBeInTheDocument()
+    expect(screen.getByText(/out of lives/i)).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /start new game/i }),
+    ).toBeInTheDocument()
+    expect(getGuessControls().guessInput).toBeDisabled()
+    expect(
+      screen.getByRole('button', { name: 'Region · 50 geodes' }),
+    ).toBeDisabled()
+
+    fireEvent.click(screen.getByRole('button', { name: /start new game/i }))
+
+    expect(screen.getByText('1000')).toBeInTheDocument()
+    expect(screen.getByText('3')).toBeInTheDocument()
+    expect(
+      screen.getByText(/submit a guess to see the result/i),
+    ).toBeInTheDocument()
+    expect(getGuessControls().guessInput).toBeEnabled()
   })
 })

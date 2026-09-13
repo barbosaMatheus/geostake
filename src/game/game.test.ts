@@ -103,7 +103,7 @@ describe('applyGuess', () => {
     }
   })
 
-  it('reduces lives by one on an incorrect guess', () => {
+  it('reduces lives by one and leaves the turn open on an incorrect guess', () => {
     const state = createInitialGameState(
       TEST_COUNTRIES,
       GAME_CONFIG,
@@ -112,12 +112,8 @@ describe('applyGuess', () => {
     const next = applyGuess(state, 'Atlantis')
 
     expect(next.player.lives).toBe(GAME_CONFIG.startingLives - 1)
-    expect(next.guessResult?.outcome).toBe('incorrect')
-    if (next.guessResult?.outcome === 'incorrect') {
-      expect(next.guessResult.livesRemaining).toBe(
-        GAME_CONFIG.startingLives - 1,
-      )
-    }
+    expect(next.guessResult).toBeNull()
+    expect(next.mysteryCountry).toBe(state.mysteryCountry)
   })
 
   it('matches a correct guess regardless of the player capitalization', () => {
@@ -142,16 +138,30 @@ describe('applyGuess', () => {
     expect(next.player.lives).toBe(0)
   })
 
-  it('ignores a second guess on the same turn', () => {
+  it('ignores a guess after the turn has been resolved by a correct answer', () => {
     const state = createInitialGameState(
       TEST_COUNTRIES,
       GAME_CONFIG,
       alwaysSelectFirst,
     )
-    const resolved = applyGuess(state, 'Atlantis')
+    const resolved = applyGuess(state, TEST_COUNTRIES[0].name)
     const again = applyGuess(resolved, TEST_COUNTRIES[0].name)
 
     expect(again).toBe(resolved)
+  })
+
+  it('allows a further guess after an incorrect guess', () => {
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    const wrong = applyGuess(state, 'Atlantis')
+    const right = applyGuess(wrong, TEST_COUNTRIES[0].name)
+
+    expect(wrong.guessResult).toBeNull()
+    expect(right.guessResult?.outcome).toBe('correct')
+    expect(right.player.lives).toBe(GAME_CONFIG.startingLives - 1)
   })
 })
 
@@ -182,7 +192,7 @@ describe('startNextTurn', () => {
   it('throws when no countries remain for the next turn', () => {
     const resolved = applyGuess(
       createInitialGameState(TEST_COUNTRIES, GAME_CONFIG, alwaysSelectFirst),
-      'Atlantis',
+      TEST_COUNTRIES[0].name,
     )
 
     expect(() => startNextTurn(resolved, [])).toThrow()
@@ -195,13 +205,34 @@ describe('startNextTurn', () => {
       alwaysSelectFirst,
     )
     const withPurchasedClue = revealClue(state, 'region')
-    const resolved = applyGuess(withPurchasedClue, 'Atlantis')
+    const resolved = applyGuess(withPurchasedClue, TEST_COUNTRIES[0].name)
     const next = startNextTurn(resolved, TEST_COUNTRIES, alwaysSelectFirst)
 
     expect(next.revealedClueIds).toHaveLength(1)
     expect(next.revealedClueIds[0]).toBe(next.startingClueId)
     expect(next.revealedClueIds).not.toContain('region')
     expect(next.player.geodes).toBe(withPurchasedClue.player.geodes)
+  })
+
+  it('resets to a fresh game when a turn ends with no lives remaining', () => {
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    const firstLoss = applyGuess(state, 'Atlantis')
+    const secondLoss = applyGuess(firstLoss, 'Atlantis')
+    const lost = applyGuess(secondLoss, 'Atlantis')
+
+    expect(lost.player.lives).toBe(0)
+    expect(lost.guessResult).toBeNull()
+
+    const next = startNextTurn(lost, TEST_COUNTRIES, alwaysSelectFirst)
+
+    expect(next.turn).toBe(1)
+    expect(next.guessResult).toBeNull()
+    expect(next.player.lives).toBe(GAME_CONFIG.startingLives)
+    expect(next.player.geodes).toBe(GAME_CONFIG.startingGeodes)
   })
 })
 
@@ -248,7 +279,7 @@ describe('resolveGuess', () => {
     expect(next.startingClueId).toBe(state.startingClueId)
   })
 
-  it('does not auto-advance on an incorrect guess', () => {
+  it('keeps the turn open on an incorrect guess', () => {
     const state = createInitialGameState(
       TEST_COUNTRIES,
       GAME_CONFIG,
@@ -256,19 +287,27 @@ describe('resolveGuess', () => {
     )
     const next = resolveGuess(state, 'Atlantis', TEST_COUNTRIES)
 
-    expect(next.guessResult?.outcome).toBe('incorrect')
+    expect(next.guessResult).toBeNull()
     expect(next.turn).toBe(1)
+    expect(next.mysteryCountry).toBe(state.mysteryCountry)
+    expect(next.player.lives).toBe(GAME_CONFIG.startingLives - 1)
   })
 
   it('is a no-op once the turn has already been resolved', () => {
+    const manualConfig = { ...GAME_CONFIG, continueOnCorrectGuess: false }
     const state = resolveGuess(
       createInitialGameState(TEST_COUNTRIES, GAME_CONFIG, alwaysSelectFirst),
-      'Atlantis',
+      TEST_COUNTRIES[0].name,
       TEST_COUNTRIES,
+      manualConfig,
+      alwaysSelectFirst,
     )
+
+    expect(state.guessResult?.outcome).toBe('correct')
+
     const again = resolveGuess(
       state,
-      TEST_COUNTRIES[0].name,
+      'Atlantis',
       TEST_COUNTRIES,
       GAME_CONFIG,
       alwaysSelectFirst,

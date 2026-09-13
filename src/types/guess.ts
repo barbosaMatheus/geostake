@@ -15,3 +15,8 @@ export interface IncorrectGuessResult {
 }
 
 export type GuessResult = CorrectGuessResult | IncorrectGuessResult
+
+export interface LastIncorrectGuess {
+  guessedName: string
+  livesRemaining: LifeCount
+}

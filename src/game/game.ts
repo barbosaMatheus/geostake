@@ -45,18 +45,15 @@ export function applyGuess(state: GameState, guessedName: string): GameState {
     ...state.player,
     lives: Math.max(0, state.player.lives - (correct ? 0 : 1)),
   }
-  const guessResult: GuessResult = correct
-    ? {
-        outcome: 'correct',
-        guessedName,
-        country: state.mysteryCountry,
-        livesRemaining: player.lives,
-      }
-    : {
-        outcome: 'incorrect',
-        guessedName,
-        livesRemaining: player.lives,
-      }
+  if (!correct) {
+    return { ...state, player }
+  }
+  const guessResult: GuessResult = {
+    outcome: 'correct',
+    guessedName,
+    country: state.mysteryCountry,
+    livesRemaining: player.lives,
+  }
   return { ...state, player, guessResult }
 }
 
@@ -85,11 +82,14 @@ export function startNextTurn(
   countries: readonly Country[],
   random: () => number = Math.random,
 ): GameState {
-  if (state.guessResult === null) {
+  if (state.guessResult === null && state.player.lives > 0) {
     return state
   }
   if (countries.length === 0) {
     throw new Error('Cannot start a new turn without any countries')
+  }
+  if (state.player.lives <= 0) {
+    return createInitialGameState(countries, GAME_CONFIG, random)
   }
   const mysteryCountry = selectMysteryCountry(countries, random)
   const startingClueId = selectStartingClue(mysteryCountry, random)

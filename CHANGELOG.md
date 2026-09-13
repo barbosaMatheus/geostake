@@ -4,7 +4,19 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
-## [0.3.1] - 2026-09-13
+## [0.3.2] - 2026-09-13
+
+### Fixed
+
+- An incorrect guess no longer ends the turn. The player stays on the same
+  mystery country with the guess input and clue panel still active, so they can
+  purchase more clues and keep guessing until they get it right.
+- Running out of lives now ends the game with a distinct "Game over" state and
+  a "Start New Game" action that resets geodes and lives, instead of advancing
+  to the next turn with zero lives.
+
+[0.3.2]: https://github.com/barbosaMatheus/geostake
+[0.3.1]: https://github.com/barbosaMatheus/geostake
 
 ### Fixed
 

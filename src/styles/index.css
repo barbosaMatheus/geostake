@@ -318,6 +318,12 @@ body {
   font-weight: 700;
 }
 
+.guess-feedback-game-over {
+  margin: 0 0 1rem;
+  color: var(--color-danger);
+  font-weight: 700;
+}
+
 @media (max-width: 30rem) {
   .guess-form-row {
     grid-template-columns: 1fr;

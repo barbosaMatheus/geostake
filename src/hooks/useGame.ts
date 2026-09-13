@@ -1,14 +1,16 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { revealClue as applyClueReveal } from '../game/clues'
+import { GAME_CONFIG, type GameConfig } from '../game/config'
 import {
   createInitialGameState,
+  isCorrectGuess,
   resolveGuess,
   startNextTurn as advanceTurn,
 } from '../game/game'
-import { GAME_CONFIG, type GameConfig } from '../game/config'
 import type { ClueId } from '../types/clue'
 import type { Country } from '../types/country'
 import type { GameState } from '../types/game'
+import type { LastIncorrectGuess } from '../types/guess'
 
 export function useGame(
   countries: readonly Country[],
@@ -18,12 +20,31 @@ export function useGame(
   const [gameState, setGameState] = useState<GameState>(() =>
     createInitialGameState(countries, config, random),
   )
+  const [lastIncorrectGuess, setLastIncorrectGuess] =
+    useState<LastIncorrectGuess | null>(null)
+
+  const gameStateRef = useRef(gameState)
+  useEffect(() => {
+    gameStateRef.current = gameState
+  }, [gameState])
 
   const submitGuess = useCallback(
     (guessedName: string) => {
-      setGameState((current) =>
-        resolveGuess(current, guessedName, countries, config, random),
-      )
+      const current = gameStateRef.current
+      if (current.guessResult !== null || current.player.lives <= 0) {
+        return
+      }
+      const wasCorrect = isCorrectGuess(guessedName, current.mysteryCountry)
+      const next = resolveGuess(current, guessedName, countries, config, random)
+      setGameState(next)
+      if (wasCorrect || next.player.lives <= 0) {
+        setLastIncorrectGuess(null)
+      } else {
+        setLastIncorrectGuess({
+          guessedName,
+          livesRemaining: next.player.lives,
+        })
+      }
     },
     [countries, config, random],
   )
@@ -33,8 +54,19 @@ export function useGame(
   }, [])
 
   const startNextTurn = useCallback(() => {
-    setGameState((current) => advanceTurn(current, countries, random))
+    const current = gameStateRef.current
+    if (current.guessResult === null && current.player.lives > 0) {
+      return
+    }
+    setGameState(advanceTurn(current, countries, random))
+    setLastIncorrectGuess(null)
   }, [countries, random])
 
-  return { gameState, submitGuess, startNextTurn, revealClue }
+  return {
+    gameState,
+    submitGuess,
+    startNextTurn,
+    revealClue,
+    lastIncorrectGuess,
+  }
 }

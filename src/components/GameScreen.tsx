@@ -19,13 +19,15 @@ function GameScreen({
   config = GAME_CONFIG,
   random,
 }: GameScreenProps) {
-  const { gameState, submitGuess, startNextTurn, revealClue } = useGame(
-    countries,
-    config,
-    random,
-  )
+  const {
+    gameState,
+    submitGuess,
+    startNextTurn,
+    revealClue,
+    lastIncorrectGuess,
+  } = useGame(countries, config, random)
   const { player, mysteryCountry, guessResult } = gameState
-  const turnResolved = guessResult !== null
+  const turnResolved = guessResult !== null || player.lives === 0
 
   return (
     <main className="app">
@@ -44,7 +46,12 @@ function GameScreen({
         onReveal={revealClue}
       />
       <GuessForm disabled={turnResolved} onSubmit={submitGuess} />
-      <GuessFeedback guessResult={guessResult} onNextTurn={startNextTurn} />
+      <GuessFeedback
+        guessResult={guessResult}
+        lastIncorrectGuess={lastIncorrectGuess}
+        lives={player.lives}
+        onNextTurn={startNextTurn}
+      />
     </main>
   )
 }

@@ -27,7 +27,7 @@ function nextTurnState(
   state: GameState,
   random: () => number = alwaysFirst,
 ): GameState {
-  const resolved = applyGuess(state, 'Atlantis')
+  const resolved = applyGuess(state, TEST_COUNTRIES[0].name)
   return startNextTurn(resolved, TEST_COUNTRIES, random)
 }
 
@@ -231,7 +231,7 @@ describe('revealClue', () => {
   })
 
   it('does not reveal clues after the turn has been resolved', () => {
-    const state = applyGuess(firstState(), 'Atlantis')
+    const state = applyGuess(firstState(), TEST_COUNTRIES[0].name)
     const next = revealClue(state, 'region')
 
     expect(next).toBe(state)
