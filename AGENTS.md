@@ -1101,6 +1101,7 @@ Turn-state conventions:
 
 * Each turn tracks `startingClueId` and `revealedClueIds` on `GameState` (clue identifiers only; the `Country` is the source of truth for clue values).
 * At the start of a turn exactly one available tier-0 clue is randomly selected and auto-revealed; population is the final fallback.
+* The starting clue is the only free-tier clue offered during its turn: non-starting tier-0 clues are completely omitted from the UI and cannot be revealed (`getTurnClues` in `src/game/clues.ts` drives what the panel offers, and `revealClue` rejects tier-0 reveals that are not `startingClueId`). Every new turn re-rolls the starting clue, so an omitted free clue has a fresh chance next round.
 * A clue whose optional data is missing for the current country is never purchasable.
 * A revealed clue cannot be purchased again; revealing is a no-op when the clue is already revealed, unavailable, or unaffordable.
 * Only a correct guess resolves a turn (`guessResult` is set on `GameState`). An incorrect guess deducts a life and leaves the turn open: the same mystery country stays active, clue purchases remain available, and the player can guess again.

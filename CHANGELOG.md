@@ -4,7 +4,21 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
-## [0.3.2] - 2026-09-13
+## [0.4.0] - 2026-09-13
+
+### Changed
+
+- Only one free-tier clue is now offered per turn: the randomly selected
+  starting clue, revealed at the start of the turn. The other free-tier clues
+  are omitted for the turn and cannot be purchased; every new turn re-rolls the
+  starting clue from all available free-tier clues, so any skipped clue can
+  appear in a later round.
+- `Coastline` moved from the free tier to the medium tier (now 100 geodes),
+  and `Lowest Elevation` moved from the medium tier to the free tier (now part
+  of the random starting-clue pool).
+
+[0.4.0]: https://github.com/barbosaMatheus/geostake
+[0.3.2]: https://github.com/barbosaMatheus/geostake
 
 ### Fixed
 

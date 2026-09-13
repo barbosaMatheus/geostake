@@ -50,8 +50,15 @@ describe('CluePanel', () => {
     renderPanel()
 
     expect(
-      screen.getByRole('button', { name: 'Land Area · Free' }),
+      screen.getByRole('button', { name: 'Region · 50 geodes' }),
     ).toBeInTheDocument()
+  })
+
+  it('omits the free-tier clues other than the starting clue', () => {
+    renderPanel()
+
+    expect(screen.queryByText('Land Area')).not.toBeInTheDocument()
+    expect(screen.queryByText('Population Density')).not.toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Region · 50 geodes' }),
     ).toBeInTheDocument()
@@ -64,6 +71,9 @@ describe('CluePanel', () => {
       screen.getByRole('button', { name: 'Highest Elevation · 100 geodes' }),
     ).toBeInTheDocument()
     expect(
+      screen.getByRole('button', { name: 'Coastline · 100 geodes' }),
+    ).toBeInTheDocument()
+    expect(
       screen.getByRole('button', {
         name: 'Internet Country Code · 375 geodes',
       }),
@@ -73,15 +83,15 @@ describe('CluePanel', () => {
   it('reveals a clue after the player activates its control', () => {
     const { onReveal } = renderPanel()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Land Area · Free' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Region · 50 geodes' }))
 
-    expect(onReveal).toHaveBeenCalledWith('land-area')
+    expect(onReveal).toHaveBeenCalledWith('region')
   })
 
   it('marks clues whose optional data is missing as unavailable', () => {
     renderPanel()
 
-    expect(screen.getAllByText('Unavailable for this country')).toHaveLength(4)
+    expect(screen.getAllByText('Unavailable for this country')).toHaveLength(3)
   })
 
   it('disables and flags clues that cost more geodes than the player has', () => {
@@ -108,9 +118,7 @@ describe('CluePanel', () => {
     expect(
       screen.getByRole('button', { name: 'Region · 50 geodes' }),
     ).toBeDisabled()
-    expect(
-      screen.getByRole('button', { name: 'Land Area · Free' }),
-    ).toBeDisabled()
+    expect(screen.queryAllByRole('button', { name: /· Free/ })).toHaveLength(0)
     expect(
       screen.getByText(/clue purchases are disabled until the next turn/i),
     ).toBeInTheDocument()

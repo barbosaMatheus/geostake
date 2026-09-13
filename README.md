@@ -20,17 +20,19 @@ PWA support are not implemented yet.
 ## Clue System
 
 Clues are grouped into five numeric tiers. One free tier-0 clue is randomly
-selected and revealed at the start of every turn; every other clue must be
-purchased with geodes, and clues whose data is missing for the current country
-cannot be purchased.
+selected and revealed at the start of every turn; that starting clue is the
+only free-tier clue offered for the turn, and the other free-tier clues are
+omitted until a later turn gives them another random chance. Every other clue
+must be purchased with geodes, and clues whose data is missing for the current
+country cannot be purchased.
 
-| Tier | Name      | Clues                                                | Base Cost |
-| ---- | --------- | ---------------------------------------------------- | --------: |
-| 0    | Free      | Population, Land Area, Population Density, Coastline |         0 |
-| 1    | Low       | Region, Hemisphere                                   |        10 |
-| 2    | Medium    | Lowest Elevation, Highest Elevation                  |        20 |
-| 3    | High      | Capital, National Colors                             |        50 |
-| 4    | Very High | Internet Country Code                                |        75 |
+| Tier | Name      | Clues                                                       | Base Cost |
+| ---- | --------- | ----------------------------------------------------------- | --------: |
+| 0    | Free      | Population, Land Area, Population Density, Lowest Elevation |         0 |
+| 1    | Low       | Region, Hemisphere                                          |        10 |
+| 2    | Medium    | Coastline, Highest Elevation                                |        20 |
+| 3    | High      | Capital, National Colors                                    |        50 |
+| 4    | Very High | Internet Country Code                                       |        75 |
 
 The current cost of a clue is its base cost times the centralized
 `CLUE_COST_MULTIPLIER` (default `5`, the normal-difficulty multiplier), so the

@@ -1,11 +1,15 @@
 import {
   CLUE_COST_MULTIPLIER,
   CLUES,
-  getCluesForTier,
   getClueTiers,
   getTierLabel,
 } from '../game/clueConfig'
-import { formatClueValue, getClueCost, isClueAvailable } from '../game/clues'
+import {
+  formatClueValue,
+  getClueCost,
+  getTurnClues,
+  isClueAvailable,
+} from '../game/clues'
 import type { ClueDefinition, ClueId, ClueTier, ClueValue } from '../types/clue'
 import type { Country } from '../types/country'
 import type { GeodeAmount } from '../types/player'
@@ -72,7 +76,9 @@ function ClueTierBlock({
   disabled,
   onReveal,
 }: Omit<ClueRowProps, 'clue'> & { tier: ClueTier }) {
-  const clues = getCluesForTier(tier, CLUES)
+  const clues = getTurnClues(startingClueId, CLUES).filter(
+    (clue) => clue.tier === tier,
+  )
 
   return (
     <div className="clue-tier">

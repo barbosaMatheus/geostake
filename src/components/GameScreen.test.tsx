@@ -41,9 +41,9 @@ describe('GameScreen', () => {
     expect(screen.getByText('Population')).toBeInTheDocument()
     expect(screen.getByText('221,359,387')).toBeInTheDocument()
     expect(screen.getAllByText('Starting clue')).toHaveLength(1)
-    expect(
-      screen.getByRole('button', { name: 'Land Area · Free' }),
-    ).toBeInTheDocument()
+    expect(screen.queryAllByRole('button', { name: /· Free/ })).toHaveLength(0)
+    expect(screen.queryByText('Land Area')).not.toBeInTheDocument()
+    expect(screen.queryByText('Population Density')).not.toBeInTheDocument()
   })
 
   it('requires a non-empty guess before enabling the submit button', () => {
@@ -132,7 +132,7 @@ describe('GameScreen', () => {
     ).toBeInTheDocument()
     expect(screen.getByText('South America')).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Land Area · Free' }),
+      screen.getByRole('button', { name: 'Capital · 250 geodes' }),
     ).toBeDisabled()
     expect(
       screen.getByText(/clue purchases are disabled until the next turn/i),

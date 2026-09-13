@@ -7,6 +7,7 @@ import {
   formatClueValue,
   getAvailableClues,
   getClueValue,
+  getTurnClues,
   isClueAvailable,
   revealClue,
   selectStartingClue,
@@ -40,9 +41,9 @@ describe('selectStartingClue', () => {
     expect(definition?.tier).toBe(0)
   })
 
-  it('does not pick the unavailable coastline clue for a country without a coastline', () => {
+  it('does not pick the unavailable lowest-elevation clue for a country without one', () => {
     for (const random of [alwaysFirst, alwaysLast]) {
-      expect(selectStartingClue(brazil, random)).not.toBe('coastline')
+      expect(selectStartingClue(japan, random)).not.toBe('lowest-elevation')
     }
   })
 
@@ -51,15 +52,15 @@ describe('selectStartingClue', () => {
     const withLast = selectStartingClue(japan, alwaysLast)
 
     expect(withFirst).toBe('population')
-    expect(withLast).toBe('coastline')
+    expect(withLast).toBe('population-density')
     expect(withFirst).not.toBe(withLast)
   })
 
-  it('selects coastline when it is the only available tier zero clue', () => {
-    const coastlineOnly = CLUES.filter((clue) => clue.id === 'coastline')
+  it('returns the sole tier zero clue when the clue list is narrowed', () => {
+    const landAreaOnly = CLUES.filter((clue) => clue.id === 'land-area')
 
-    expect(selectStartingClue(japan, alwaysFirst, coastlineOnly)).toBe(
-      'coastline',
+    expect(selectStartingClue(brazil, alwaysFirst, landAreaOnly)).toBe(
+      'land-area',
     )
   })
 
@@ -120,6 +121,25 @@ describe('isClueAvailable', () => {
     ] as const) {
       expect(isClueAvailable(id, brazil)).toBe(true)
     }
+  })
+})
+
+describe('getTurnClues', () => {
+  it('includes the starting clue and every non-free clue', () => {
+    const ids = getTurnClues('population', CLUES).map((clue) => clue.id)
+
+    expect(ids).toContain('population')
+    expect(ids).toContain('region')
+    expect(ids).toContain('coastline')
+    expect(ids).toContain('internet-country-code')
+  })
+
+  it('omits free-tier clues other than the starting clue', () => {
+    const ids = getTurnClues('population', CLUES).map((clue) => clue.id)
+
+    expect(ids).not.toContain('land-area')
+    expect(ids).not.toContain('population-density')
+    expect(ids).not.toContain('lowest-elevation')
   })
 })
 
@@ -215,12 +235,12 @@ describe('revealClue', () => {
     expect(next.player.geodes).toBe(state.player.geodes)
   })
 
-  it('reveals a zero-cost tier zero clue without changing geodes', () => {
+  it('does not reveal a free-tier clue that is not the starting clue', () => {
     const state = firstState()
     const next = revealClue(state, 'land-area')
 
-    expect(next.player.geodes).toBe(state.player.geodes)
-    expect(next.revealedClueIds).toContain('land-area')
+    expect(next).toBe(state)
+    expect(next.revealedClueIds).not.toContain('land-area')
   })
 
   it('keeps the starting clue revealed alongside purchased clues', () => {
@@ -266,7 +286,7 @@ describe('clue state across turns', () => {
     const state = revealClue(firstState(), 'region')
     const newTurn = nextTurnState(state, alwaysLast)
 
-    expect(newTurn.startingClueId).toBe('coastline')
-    expect(newTurn.revealedClueIds).toEqual(['coastline'])
+    expect(newTurn.startingClueId).toBe('population-density')
+    expect(newTurn.revealedClueIds).toEqual(['population-density'])
   })
 })

@@ -12,6 +12,13 @@ export function getAvailableClues(
   return clues.filter((clue) => clue.isAvailable(country))
 }
 
+export function getTurnClues(
+  startingClueId: ClueId,
+  clues: readonly ClueDefinition<ClueValue>[] = CLUES,
+): readonly ClueDefinition<ClueValue>[] {
+  return clues.filter((clue) => clue.tier !== 0 || clue.id === startingClueId)
+}
+
 export function isClueAvailable(
   id: ClueId,
   country: Country,
@@ -74,6 +81,10 @@ export function revealClue(
   costMultiplier: number = CLUE_COST_MULTIPLIER,
 ): GameState {
   if (state.guessResult !== null) {
+    return state
+  }
+  const definition = getClueDefinition(clueId)
+  if (definition.tier === 0 && clueId !== state.startingClueId) {
     return state
   }
   if (state.revealedClueIds.includes(clueId)) {
