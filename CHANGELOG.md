@@ -4,6 +4,16 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.7.1] - 2026-09-13
+
+### Changed
+
+- Removed the tagline from the game screen; it now appears only on the landing
+  page. The game title remains on both pages.
+- Application version bumped to `0.7.1`.
+
+[0.7.1]: https://github.com/barbosaMatheus/geostake
+
 ## [0.7.0] - 2026-09-13
 
 ### Added

@@ -82,3 +82,9 @@ tasks:
     cmds:
       - cmd: docker rm --force {{.CONTAINER_NAME}}
         ignore_error: true
+
+  docker:reload:
+    desc: Stop and remove the container, then rebuild and start it again
+    deps:
+      - docker:down
+      - docker:up
