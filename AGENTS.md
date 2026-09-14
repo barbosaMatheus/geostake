@@ -428,9 +428,9 @@ The exact organization may change as the project develops, but country asset loo
 
 ## 12. Design for PWA Compatibility
 
-The application should be developed as a PWA rather than retrofitted into one at the very end.
+The application is developed as a PWA rather than retrofitted into one at the very end.
 
-The PWA should eventually provide:
+The PWA provides:
 
 * Web app manifest
 * Appropriate application icons
@@ -440,7 +440,11 @@ The PWA should eventually provide:
 * Installability
 * Offline application startup
 
-Use a maintained Vite-compatible PWA solution rather than implementing a service worker manually unless there is a specific reason to do so.
+Use a maintained Vite-compatible PWA solution rather than implementing a service worker manually unless there is a specific reason to do so. GeoStake uses **`vite-plugin-pwa`** (generateSW strategy), configured in `vite.config.ts`:
+
+* `registerType: 'autoUpdate'` — the generated service worker calls `skipWaiting`/`clientsClaim` and registration is injected automatically into the built HTML (`dist/registerSW.js`), so no runtime PWA client code is imported into the app bundle.
+* `manifest` — app name/short name `GeoStake`, `display: 'standalone'`, theme color `#2f6db5`, background color `#f6f3ea`, and the shared PWA icons from `public/icons/` (192×192 `any`, 512×512 `any`, 512×512 `maskable`). The `theme_color` meta and the `/favicon.svg` + `apple-touch-icon` links in `index.html` must stay in sync with the manifest colours and assets.
+* `workbox.globPatterns` — precaches the whole static build (`js/css/html/json/svg/png/ico/woff/woff2/ttf/avif/webp`) plus `navigateFallback: '/index.html'` and `cleanupOutdatedCaches`. All gameplay assets (country data, flags, outlines) are bundled into the JS by the bundler, so they are covered by the single app-bundle precache entry; there are no runtime network calls and no `runtimeCaching` entries that depend on the network.
 
 The service worker configuration must ensure that all assets required for gameplay can be available offline.
 
@@ -455,6 +459,22 @@ Pay particular attention to:
 * application icons
 
 Avoid unnecessarily caching external network resources.
+
+PWA asset conventions:
+
+* `index.html` must reference the favicon at `/favicon.svg`, declare the app-icon PNGs (`/icons/geostake-192.png`, `/icons/geostake-512.png`) as `image/png` favicon candidates, and link a 192×192 `apple-touch-icon` for mobile home-screens.
+* The manifest icons are **loosely coupled** placeholders shipped in `public/icons/` (`geostake-192.png`, `geostake-512.png`) plus `public/favicon.svg`; they can be swapped for the final GeoStake logo without touching the manifest structure. Lookup is by filename only. Keep all public web assets world-readable (mode `0644`) so the unprivileged nginx container can serve them.
+* Service workers require a secure context (HTTPS or `localhost`); a plain static build served over unsecured HTTP in the network will not register the worker.
+* Vite's `base` is `/` today. The build stays compatible with subpath hosting (GitHub Pages project site) — that is addressed in Phase 8; do not scatter absolute URLs in game code.
+* PWA/offline validation is documented in `README.md` under "Playing GeoStake Offline" (build, preview, service-worker/manifest/cache checks, offline reload).
+
+Automated PWA checks live in `src/tests/pwaAssets.test.ts`:
+
+* The required PWA assets exist with the right formats/dimensions (`icons/geostake-192.png`, `icons/geostake-512.png`, `favicon.svg`).
+* `index.html` keeps the favicon, apple-touch-icon, and theme-color markup.
+* `vite.config.ts` keeps the PWA plugin and key manifest/navigateFallback settings.
+
+Do not introduce runtime PWA client dependencies (workbox-window only in the built output when registration is auto-injected) or fetch-on-demand offline behavior.
 
 The PWA should never make network availability a requirement for starting or playing a game.
 

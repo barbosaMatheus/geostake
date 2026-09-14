@@ -1,4 +1,5 @@
 const appName = import.meta.env.VITE_APP_NAME ?? 'GeoStake'
+import AppLogo from './AppLogo'
 
 interface LandingScreenProps {
   hasSavedGame: boolean
@@ -21,8 +22,11 @@ function LandingScreen({
 }: LandingScreenProps) {
   return (
     <div className="app landing-screen">
-      <header>
-        <h1>{appName}</h1>
+      <header className="app-header">
+        <div className="app-header-row">
+          <AppLogo />
+          <h1>{appName}</h1>
+        </div>
         <p className="tagline">
           {
             'Buy clues, spend geodes, and identify the mystery country before your lives run out.'

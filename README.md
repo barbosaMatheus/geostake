@@ -368,6 +368,82 @@ non-secret and client-visible.
 | --------------- | ---------- | ----------------------------------------- |
 | `VITE_APP_NAME` | `GeoStake` | Application name shown in the page header |
 
+## Playing GeoStake Offline
+
+GeoStake is a Progressive Web App (PWA). Once it has been loaded online for the
+first time, the service worker precaches the entire application — HTML, JS, CSS,
+all country data, every flag, every country outline, the icons, and the
+favicon — so the game works with no network access at all.
+
+To play GeoStake offline:
+
+1. Open GeoStake while online (the app loads normally and the service worker
+   caches everything it needs).
+2. Install / add GeoStake to the device home screen when your browser supports
+   it (usually via the browser menu or a promoted install prompt).
+3. Open the installed app once while online so the pre-caching completes.
+4. Enable airplane mode or otherwise disable network access.
+5. Reopen / reload GeoStake (from the home-screen icon, or refresh the page).
+6. Verify that the landing screen, New Game, Continue Game, Settings, starting
+   turns, clue purchases (including the flag and outline clues), guessing,
+   lives, geodes, rewards, life purchases, the debug Skip action, and saved
+   games all work normally. Progress is kept in `localStorage` on the device.
+7. The first launch after the app updates will use the new version; browsers
+   fetch the updated bundle in the background when a connection is available.
+
+Browser/device limitations:
+
+- Service workers require a secure context (HTTPS) or `localhost`. This means
+  installation and offline support work on the hosted site and on `localhost`,
+  but not when serving the plain build over unsecured HTTP on the network.
+- Installability depends on the browser (Chrome/Edge/Android support it well;
+  Safari and iOS support installing to the home screen but with a more limited
+  offline install experience).
+- Saved games live in the browser's `localStorage` for the site; clearing site
+  data deletes saved progress.
+- To start over with a fresh cache, clear the site data or unregister the
+  service worker in DevTools.
+
+### Validating the production build offline
+
+A developer can verify offline behavior of a local production build without a
+feature-phone setup:
+
+```sh
+npm run build        # produces dist/ with sw.js, workbox-*.js, manifest.webmanifest
+npm run preview      # serves the production build on http://localhost:4173
+```
+
+Then in a browser opened to the preview URL:
+
+1. Confirm the service worker is registered and active (DevTools →
+   Application → Service Workers → `sw.js`, scope `/`).
+2. Confirm the app manifest parses (Application → Manifest) with the app name,
+   `standalone` display mode, and both 192×192 and 512×512 icons.
+3. Confirm the cache storage contains the precached entries (Application →
+   Cache Storage → the Workbox precache: `index.html`, the JS/CSS bundles,
+   `favicon.svg`, `icons/geostake-192.png`, `icons/geostake-512.png`, and
+   `manifest.webmanifest`).
+4. Switch DevTools → Network → Offline (or enable airplane mode on the
+   machine), reload, and play: start a game, buy a clue (including the flag and
+   outline clues), guess, buy a life, use Skip, navigate to Settings and back,
+   and confirm a saved game persists across reloads.
+
+An HTTP-level sanity check can also be run against the preview server from a
+terminal (every URL below must return `200`):
+
+```sh
+for p in "" manifest.webmanifest sw.js registerSW.js favicon.svg \
+  icons/geostake-192.png icons/geostake-512.png \
+  assets/index-*.js assets/index-*.css; do
+  curl -s -o /dev/null -w "%{http_code} $p\n" "http://localhost:4173/$p"
+done
+```
+
+The build output remains compatible with static hosting; serving the site from
+a repository subpath (GitHub Pages project site) is planned for Phase 8 and
+will reuse the same `base`-relative asset handling.
+
 ## License and Attribution
 
 The canonical country dataset is generated from the public-domain CIA World

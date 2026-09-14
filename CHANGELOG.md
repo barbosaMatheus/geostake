@@ -4,6 +4,46 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.10.1] - 2026-09-13
+
+### Changed
+
+- The GeoStake app icon (`public/icons/geostake-192.png`) now appears next to
+  the game title on both the landing screen and the game screen, using the same
+  loosely coupled icon asset as the PWA manifest.
+- The app-icon PNGs are now declared as browser favicon candidates in
+  `index.html` (alongside the SVG favicon), so the tab/bookmark icon matches
+  the installed-app icon.
+
+[0.10.1]: https://github.com/barbosaMatheus/geostake
+
+## [0.10.0] - 2026-09-13
+
+### Added
+
+- PWA support via `vite-plugin-pwa`: a web app manifest (app name `GeoStake`,
+  `standalone` display, 192×192 and 512×512 icons with `any` and `maskable`
+  purposes, accent/background colors matching the UI) and a service worker
+  that precaches the entire application — HTML, JS, CSS, all country data
+  (flags and outlines are bundled into the JS), icons, and favicon — so the
+  game installs and runs fully offline after a single successful load.
+- `index.html` now links the `/favicon.svg` favicon and an `apple-touch-icon`
+  and declares the theme color.
+- Offline-safe navigation: navigation requests fall back to the precached
+  `index.html`, and the service worker auto-updates and takes control
+  immediately on new deployments.
+- Automated PWA asset/config checks in `src/tests/pwaAssets.test.ts`.
+- README section **Playing GeoStake Offline** documenting the player workflow,
+  browser limitations, and the developer offline-validation procedure.
+- Application version bumped to `0.10.0`.
+
+### Changed
+
+- `vite.config.ts` includes the `VitePWA` plugin (generateSW strategy) and
+  adds `vite-plugin-pwa` as a dev dependency.
+
+[0.10.0]: https://github.com/barbosaMatheus/geostake
+
 ## [0.9.0] - 2026-09-13
 
 ### Added
