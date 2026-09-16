@@ -342,22 +342,23 @@ bundle is built in a Node stage, then copied into a lightweight nginx
 If [Task](https://taskfile.dev) is installed, the following commands are
 available:
 
-| Command              | Description                                       |
-| -------------------- | ------------------------------------------------- |
-| `task install`       | Install dependencies                              |
-| `task dev`           | Start the Vite development server                 |
-| `task test`          | Run the test suite once                           |
-| `task test:watch`    | Run the test suite in watch mode                  |
-| `task typecheck`     | Run the TypeScript type checker                   |
-| `task lint`          | Lint with ESLint                                  |
-| `task format`        | Format with Prettier                              |
-| `task build`         | Build the production bundle                       |
-| `task preview`       | Build and preview the production bundle           |
-| `task data:generate` | Regenerate the canonical country dataset          |
-| `task clean`         | Remove build artifacts                            |
-| `task docker:build`  | Build the production container image              |
-| `task docker:up`     | Build, start, and expose the production container |
-| `task docker:down`   | Stop and remove the production container          |
+| Command              | Description                                                                   |
+| -------------------- | ----------------------------------------------------------------------------- |
+| `task version-sync`  | Sync `package.json`/`VERSION` to the highest version (runs before every task) |
+| `task install`       | Install dependencies                                                          |
+| `task dev`           | Start the Vite development server                                             |
+| `task test`          | Run the test suite once                                                       |
+| `task test:watch`    | Run the test suite in watch mode                                              |
+| `task typecheck`     | Run the TypeScript type checker                                               |
+| `task lint`          | Lint with ESLint                                                              |
+| `task format`        | Format with Prettier                                                          |
+| `task build`         | Build the production bundle                                                   |
+| `task preview`       | Build and preview the production bundle                                       |
+| `task data:generate` | Regenerate the canonical country dataset                                      |
+| `task clean`         | Remove build artifacts                                                        |
+| `task docker:build`  | Build the production container image                                          |
+| `task docker:up`     | Build, start, and expose the production container                             |
+| `task docker:down`   | Stop and remove the production container                                      |
 
 ## Environment
 

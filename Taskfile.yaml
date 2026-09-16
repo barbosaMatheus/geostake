@@ -3,74 +3,146 @@ version: '3'
 vars:
   IMAGE_NAME: geostake
   CONTAINER_NAME: geostake
-  HOST_PORT: '8080'
+  HOST_PORT: '8888'
 
 tasks:
+  version-sync:
+    desc: Sync package.json and VERSION to the highest of the two versions
+    silent: true
+    run: once
+    cmds:
+      - |
+        node --input-type=commonjs -e '
+        const fs = require("fs");
+        const pkgPath = "package.json";
+        const verPath = "VERSION";
+        const read = (p) => {
+          try { return fs.readFileSync(p, "utf8").trim(); } catch { return ""; }
+        };
+        const parse = (v) => {
+          const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(v);
+          return m ? m.slice(1).map(Number) : null;
+        };
+        const cmp = (a, b) => {
+          for (let i = 0; i < 3; i += 1) if (a[i] !== b[i]) return a[i] - b[i];
+          return 0;
+        };
+        const pkgText = fs.readFileSync(pkgPath, "utf8");
+        const pkgVersion = JSON.parse(pkgText).version;
+        const candidates = [pkgVersion, read(verPath)].map(parse).filter(Boolean);
+        if (candidates.length === 0) {
+          console.error("version-sync: no valid X.Y.Z version found");
+          process.exit(1);
+        }
+        let highest = candidates[0];
+        for (const candidate of candidates) {
+          if (cmp(candidate, highest) > 0) highest = candidate;
+        }
+        const target = highest.join(".");
+        let changed = false;
+        if (pkgVersion !== target) {
+          const updated = pkgText.replace(/("version"\s*:\s*")[^"]*(")/, "$1" + target + "$2");
+          fs.writeFileSync(pkgPath, updated);
+          console.log("version-sync: package.json -> " + target);
+          changed = true;
+        }
+        if (read(verPath) !== target) {
+          fs.writeFileSync(verPath, target + "\n");
+          console.log("version-sync: VERSION -> " + target);
+          changed = true;
+        }
+        if (!changed) console.log("version-sync: already at " + target);
+        '
+
   install:
     desc: Install project dependencies
+    deps:
+      - version-sync
     cmds:
       - npm install
 
   dev:
     desc: Start the Vite development server
+    deps:
+      - version-sync
     cmds:
       - npm run dev
 
   test:
     desc: Run the test suite once
+    deps:
+      - version-sync
     cmds:
       - npm test
 
   test:watch:
     desc: Run the test suite in watch mode
+    deps:
+      - version-sync
     cmds:
       - npm run test:watch
 
   typecheck:
     desc: Run the TypeScript type checker
+    deps:
+      - version-sync
     cmds:
       - npm run typecheck
 
   lint:
     desc: Lint the codebase with ESLint
+    deps:
+      - version-sync
     cmds:
       - npm run lint
 
   format:
     desc: Format the codebase with Prettier
+    deps:
+      - version-sync
     cmds:
       - npm run format
 
   build:
     desc: Build the production bundle
+    deps:
+      - version-sync
     cmds:
       - npm run build
 
   preview:
     desc: Build and preview the production bundle
     deps:
+      - version-sync
       - build
     cmds:
       - npm run preview
 
   data:generate:
     desc: Regenerate the canonical country dataset from the local FactsBook checkout
+    deps:
+      - version-sync
     cmds:
       - npm run generate:countries
 
   clean:
     desc: Remove build artifacts
+    deps:
+      - version-sync
     cmds:
       - npm run clean
 
   docker:build:
     desc: Build the production container image
+    deps:
+      - version-sync
     cmds:
       - docker build --tag {{.IMAGE_NAME}} .
 
   docker:up:
     desc: Build, start, and expose the production container on port {{.HOST_PORT}}
     deps:
+      - version-sync
       - docker:build
     cmds:
       - cmd: docker rm --force {{.CONTAINER_NAME}} 2>/dev/null || true
@@ -79,6 +151,8 @@ tasks:
 
   docker:down:
     desc: Stop and remove the production container
+    deps:
+      - version-sync
     cmds:
       - cmd: docker rm --force {{.CONTAINER_NAME}}
         ignore_error: true
@@ -86,5 +160,6 @@ tasks:
   docker:reload:
     desc: Stop and remove the container, then rebuild and start it again
     deps:
+      - version-sync
       - docker:down
       - docker:up
