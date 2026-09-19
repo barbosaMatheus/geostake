@@ -4,6 +4,23 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.11.0] - 2026-09-19
+
+### Added
+
+- GitHub Actions deployment workflow (`.github/workflows/deploy.yml`) that
+  builds the app and publishes it to GitHub Pages on every push to `main`.
+- GitHub Pages (project-site subpath) support: the Vite `base` is now driven by
+  the `VITE_BASE_PATH` environment variable (default `/`, `/geostake/` for the
+  Pages deployment), and the PWA manifest `start_url`/`scope` plus the service
+  worker `navigateFallback` are derived from that base instead of being
+  hard-coded to the site root, so installation and offline play keep working
+  when the game is served from `https://<user>.github.io/geostake/`.
+- `VITE_BASE_PATH` documented in `.env.example`.
+- Application version bumped to `0.11.0`.
+
+[0.11.0]: https://github.com/barbosaMatheus/geostake
+
 ## [0.10.1] - 2026-09-13
 
 ### Changed

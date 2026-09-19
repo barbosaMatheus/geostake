@@ -66,9 +66,18 @@ describe('PWA configuration', () => {
     expect(config).toContain('name:')
     expect(config).toContain("short_name: 'GeoStake'")
     expect(config).toContain("display: 'standalone'")
-    expect(config).toContain("start_url: '/'")
     expect(config).toContain('icons/geostake-192.png')
     expect(config).toContain('icons/geostake-512.png')
     expect(config).toContain('navigateFallback:')
+  })
+
+  it('keeps the deployment base subpath-safe for GitHub Pages', () => {
+    const config = readFileSync(resolve(projectRoot, 'vite.config.ts'), 'utf8')
+
+    expect(config).toContain('base: APP_BASE')
+    expect(config).toContain('APP_BASE = env.VITE_BASE_PATH || ')
+    expect(config).toContain('navigateFallback: `${APP_BASE}index.html`')
+    expect(config).not.toContain("start_url: '/'")
+    expect(config).not.toContain("scope: '/'")
   })
 })

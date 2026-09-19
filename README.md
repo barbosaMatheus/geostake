@@ -260,6 +260,7 @@ Raw FactsBook samples used as test fixtures are stored under
 - **Vitest** + **React Testing Library** for testing
 - **ESLint** + **Prettier** for linting and formatting
 - **Docker** (single-container, multi-stage production build)
+- **GitHub Actions** + **GitHub Pages** for automated build and public hosting
 - No backend; the application is a static build served by a lightweight web
   server.
 
@@ -307,11 +308,39 @@ npm run lint
 npm run build
 ```
 
+By default the build is rooted at `/` (fine for the local preview server and
+the Docker/nginx container). To build for a GitHub Pages project site located
+at a repository subpath, set `VITE_BASE_PATH` to that subpath — the Vite
+`base`, the PWA manifest `start_url`/`scope`, and the service-worker
+`navigateFallback` are all derived from it:
+
+```sh
+VITE_BASE_PATH=/geostake/ npm run build
+```
+
 Preview the production build locally:
 
 ```sh
 npm run preview
 ```
+
+## GitHub Pages
+
+The repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml`)
+that runs on pushes to `main` (and manually via *Actions → Run workflow*). It
+installs dependencies, runs lint, type checking and tests, builds the app with
+`VITE_BASE_PATH=/geostake/`, and publishes `dist/` to GitHub Pages.
+
+To enable it in the repository settings (Settings → Pages → Build and
+deployment):
+
+1. Set **Source** to **GitHub Actions**.
+2. Confirm the `github-pages` environment in Settings → Environments is deployed
+   to `gh-pages` only after successful runs.
+
+The live game is then served from
+`https://<owner>.github.io/geostake/`, installable and playable offline from
+that subpath.
 
 ## Docker
 
@@ -365,9 +394,10 @@ available:
 Copy `.env.example` to `.env` to override defaults. All variables are
 non-secret and client-visible.
 
-| Variable        | Default    | Description                               |
-| --------------- | ---------- | ----------------------------------------- |
-| `VITE_APP_NAME` | `GeoStake` | Application name shown in the page header |
+| Variable          | Default    | Description                                                              |
+| ----------------- | ---------- | ------------------------------------------------------------------------ |
+| `VITE_APP_NAME`   | `GeoStake` | Application name shown in the page header                                 |
+| `VITE_BASE_PATH`  | `/`        | Vite `base` (asset/route prefix). Set to `/geostake/` for GitHub Pages.  |
 
 ## Playing GeoStake Offline
 
@@ -441,9 +471,9 @@ for p in "" manifest.webmanifest sw.js registerSW.js favicon.svg \
 done
 ```
 
-The build output remains compatible with static hosting; serving the site from
-a repository subpath (GitHub Pages project site) is planned for Phase 8 and
-will reuse the same `base`-relative asset handling.
+The build output is compatible with static hosting; on GitHub Pages the game
+is served from the repository subpath (`VITE_BASE_PATH=/geostake/`), and the
+same `base`-relative asset handling keeps the PWA installable and offline.
 
 ## License and Attribution
 
