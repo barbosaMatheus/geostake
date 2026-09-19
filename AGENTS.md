@@ -443,8 +443,8 @@ The PWA provides:
 Use a maintained Vite-compatible PWA solution rather than implementing a service worker manually unless there is a specific reason to do so. GeoStake uses **`vite-plugin-pwa`** (generateSW strategy), configured in `vite.config.ts`:
 
 * `registerType: 'autoUpdate'` — the generated service worker calls `skipWaiting`/`clientsClaim` and registration is injected automatically into the built HTML (`dist/registerSW.js`), so no runtime PWA client code is imported into the app bundle.
-* `manifest` — app name/short name `GeoStake`, `display: 'standalone'`, theme color `#2f6db5`, background color `#f6f3ea`, and the shared PWA icons from `public/icons/` (192×192 `any`, 512×512 `any`, 512×512 `maskable`). The `theme_color` meta and the `/favicon.svg` + `apple-touch-icon` links in `index.html` must stay in sync with the manifest colours and assets.
-* `workbox.globPatterns` — precaches the whole static build (`js/css/html/json/svg/png/ico/woff/woff2/ttf/avif/webp`) plus `navigateFallback: '/index.html'` and `cleanupOutdatedCaches`. All gameplay assets (country data, flags, outlines) are bundled into the JS by the bundler, so they are covered by the single app-bundle precache entry; there are no runtime network calls and no `runtimeCaching` entries that depend on the network.
+* `manifest` — app name/short name `GeoStake`, `display: 'standalone'`, theme color `#2f6db5`, background color `#f6f3ea`, and the shared PWA icons from `public/icons/` (192×192 `any`, 512×512 `any`, 512×512 `maskable`). The `theme_color` meta and the `/favicon.svg` + `apple-touch-icon` links in `index.html` must stay in sync with the manifest colours and assets. Do **not** hard-code the manifest `start_url`/`scope`: `vite-plugin-pwa` derives them from Vite's `base`, so they stay correct when the app is served from a subpath (`/geostake/` on GitHub Pages).
+* `workbox.globPatterns` — precaches the whole static build (`js/css/html/json/svg/png/ico/woff/woff2/ttf/avif/webp`) plus a `navigateFallback` that is prefixed with the base (`${APP_BASE}index.html`, i.e. `/index.html` at root and `/geostake/index.html` on Pages) and `cleanupOutdatedCaches`. All gameplay assets (country data, flags, outlines) are bundled into the JS by the bundler, so they are covered by the single app-bundle precache entry; there are no runtime network calls and no `runtimeCaching` entries that depend on the network.
 
 The service worker configuration must ensure that all assets required for gameplay can be available offline.
 
@@ -465,14 +465,14 @@ PWA asset conventions:
 * `index.html` must reference the favicon at `/favicon.svg`, declare the app-icon PNGs (`/icons/geostake-192.png`, `/icons/geostake-512.png`) as `image/png` favicon candidates, and link a 192×192 `apple-touch-icon` for mobile home-screens.
 * The manifest icons are **loosely coupled** placeholders shipped in `public/icons/` (`geostake-192.png`, `geostake-512.png`) plus `public/favicon.svg`; they can be swapped for the final GeoStake logo without touching the manifest structure. Lookup is by filename only. Keep all public web assets world-readable (mode `0644`) so the unprivileged nginx container can serve them.
 * Service workers require a secure context (HTTPS or `localhost`); a plain static build served over unsecured HTTP in the network will not register the worker.
-* Vite's `base` is `/` today. The build stays compatible with subpath hosting (GitHub Pages project site) — that is addressed in Phase 8; do not scatter absolute URLs in game code.
+* Vite's `base` is derived from the `VITE_BASE_PATH` environment variable (default `/`) via `loadEnv` in `vite.config.ts`. Local dev, `vite preview`, and the Docker/nginx container use `/`; the GitHub Pages workflow builds with `VITE_BASE_PATH=/geostake/` so the app is served from the repository subpath. Do not scatter absolute URLs in game code — use `import.meta.env.BASE_URL` when a public asset path is needed.
 * PWA/offline validation is documented in `README.md` under "Playing GeoStake Offline" (build, preview, service-worker/manifest/cache checks, offline reload).
 
 Automated PWA checks live in `src/tests/pwaAssets.test.ts`:
 
 * The required PWA assets exist with the right formats/dimensions (`icons/geostake-192.png`, `icons/geostake-512.png`, `favicon.svg`).
 * `index.html` keeps the favicon, apple-touch-icon, and theme-color markup.
-* `vite.config.ts` keeps the PWA plugin and key manifest/navigateFallback settings.
+* `vite.config.ts` keeps the PWA plugin and key manifest/navigateFallback settings, and derives `start_url`/`scope`/`navigateFallback` from the `VITE_BASE_PATH` base instead of hard-coding them to the site root.
 
 Do not introduce runtime PWA client dependencies (workbox-window only in the built output when registration is auto-injected) or fetch-on-demand offline behavior.
 
@@ -681,9 +681,9 @@ Do not introduce assumptions that require:
 
 When client-side routing is eventually introduced, ensure it is compatible with GitHub Pages or avoid unnecessary routing complexity.
 
-Vite's `base` configuration must be considered because GitHub Pages project sites are commonly served from a repository subpath rather than `/`.
+Vite's `base` configuration must be considered because GitHub Pages project sites are commonly served from a repository subpath rather than `/`. GeoStake handles this with `VITE_BASE_PATH` (see the PWA guidelines): the Pages workflow builds with `/geostake/`, and the manifest `start_url`/`scope` and `navigateFallback` follow the base.
 
-Deployment configuration should eventually be handled through GitHub Actions.
+Deployment is handled through a GitHub Actions workflow (`.github/workflows/deploy.yml`) that runs lint, type check, and tests, builds with `VITE_BASE_PATH=/geostake/`, uploads `dist/` with `actions/upload-pages-artifact`, and publishes with `actions/deploy-pages`. Keep this workflow aligned with any build environment, base-path, or artifact changes.
 
 ---
 
