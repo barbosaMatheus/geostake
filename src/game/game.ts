@@ -18,6 +18,13 @@ export function isCorrectGuess(guess: string, country: Country): boolean {
   return defaultGuessChecker.isCorrect(guess, country.name)
 }
 
+export function guessMatchPercent(
+  guess: string,
+  country: Country,
+): number | null {
+  return defaultGuessChecker.matchPercent(guess, country.name)
+}
+
 export function createInitialGameState(
   countries: readonly Country[],
   config: GameConfig = GAME_CONFIG,

@@ -1,4 +1,5 @@
 import { GAME_CONFIG, type GameConfig } from '../game/config'
+import { guessMatchPercent } from '../game/game'
 import { usePersistentGame } from '../hooks/usePersistentGame'
 import type { StorageAdapter } from '../persistence/storage'
 import type { Country } from '../types/country'
@@ -38,6 +39,10 @@ function GameScreen({
   } = usePersistentGame(countries, config, random, initialGameState, storage)
   const { player, mysteryCountry, guessResult } = gameState
   const turnResolved = guessResult !== null || player.lives === 0
+  const matchPercent =
+    guessResult?.outcome === 'correct'
+      ? guessMatchPercent(guessResult.guessedName, guessResult.country)
+      : null
 
   return (
     <main className="app game-screen">
@@ -69,6 +74,7 @@ function GameScreen({
         lastIncorrectGuess={lastIncorrectGuess}
         lives={player.lives}
         countryName={mysteryCountry.name}
+        matchPercent={matchPercent}
         onNextTurn={startNextTurn}
       />
     </main>

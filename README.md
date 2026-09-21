@@ -134,9 +134,9 @@ JavaScript build), so visual clues work with the network disconnected.
 Game rules that are not clue data or economy values live in `src/game/config.ts`
 under `GAME_CONFIG`:
 
-| Setting                  | Default | Description                                                                                                                                                                            |
-| ------------------------ | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `continueOnCorrectGuess` | `true`  | When enabled, a correct guess immediately starts the next turn. When disabled, the turn stays open on the feedback screen and clue purchases are disabled until the next round starts. |
+| Setting                  | Default | Description                                                                                                                                                                                                                                                            |
+| ------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `continueOnCorrectGuess` | `false` | A correct guess leaves the turn resolved on the feedback screen — showing the reward and the accepted match percentage — until the player presses **Start Next Turn** to begin the next round. When enabled, a correct guess instead immediately starts the next turn. |
 
 `GAME_CONFIG` also carries a reference to `ECONOMY_CONFIG`
 (`src/game/economyConfig.ts`), which holds the player-economy numbers described

@@ -28,6 +28,12 @@ This project follows [Semantic Versioning](https://semver.org/).
   correct. Application version bumped to `0.12.0`.
 - The landing screen now shows the application version (`package.json`
   `version`, e.g. "GeoStake v0.12.0") as a small footer.
+- A correct guess no longer advances straight to the next turn. The feedback
+  card now reports the success alongside the accepted match percentage (e.g.
+  `Correct! 92% match with 'Brazil'`; exact matches show `100%`) and a
+  **Start Next Turn** button, so the next round only begins when the player
+  chooses to continue. The underlying `GAME_CONFIG.continueOnCorrectGuess`
+  default is now `false`.
 
 [0.12.0]: https://github.com/barbosaMatheus/geostake
 

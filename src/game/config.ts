@@ -6,6 +6,6 @@ export interface GameConfig {
 }
 
 export const GAME_CONFIG: GameConfig = {
-  continueOnCorrectGuess: true,
+  continueOnCorrectGuess: false,
   economy: ECONOMY_CONFIG,
 }

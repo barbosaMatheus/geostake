@@ -9,8 +9,6 @@ import GameScreen from './GameScreen'
 
 const alwaysSelectFirst = () => 0
 
-const manualContinueConfig = { ...GAME_CONFIG, continueOnCorrectGuess: false }
-
 function getGuessControls() {
   return {
     guessInput: screen.getByRole('textbox', { name: /guess the country/i }),
@@ -93,67 +91,76 @@ describe('GameScreen', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('automatically starts a new turn after a correct guess by default', () => {
+  it('does not auto-advance after a correct guess and shows success feedback', () => {
     render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
     const { guessInput, submitButton } = getGuessControls()
 
-    fireEvent.change(guessInput, { target: { value: TEST_COUNTRIES[0].name } })
+    fireEvent.change(guessInput, {
+      target: { value: TEST_COUNTRIES[0].name },
+    })
     fireEvent.click(submitButton)
 
     expect(
-      screen.getByText(/submit a guess to see the result/i),
+      screen.getByText(
+        "Correct! 100% match with 'Brazil'. You earned 500 geodes!",
+      ),
     ).toBeInTheDocument()
-    expect(screen.queryByText(/was brazil/i)).not.toBeInTheDocument()
-    expect(getGuessControls().guessInput).toBeEnabled()
-    expect(screen.getAllByText('Starting clue')).toHaveLength(1)
+    expect(
+      screen.getByRole('button', { name: /start next turn/i }),
+    ).toBeInTheDocument()
+    expect(submitButton).toBeDisabled()
+    expect(guessInput).toBeDisabled()
     expect(screen.getByText('1500')).toBeInTheDocument()
+    expect(
+      screen.queryByText(/submit a guess to see the result/i),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows the rounded match percentage for an accepted near-match', () => {
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
+    const { guessInput, submitButton } = getGuessControls()
+
+    fireEvent.change(guessInput, { target: { value: 'Brasil' } })
+    fireEvent.click(submitButton)
+
+    expect(
+      screen.getByText(
+        "Correct! 92% match with 'Brazil'. You earned 500 geodes!",
+      ),
+    ).toBeInTheDocument()
   })
 
   it('reports the geode reward on a correctly solved turn', () => {
-    render(
-      <GameScreen
-        countries={TEST_COUNTRIES}
-        random={alwaysSelectFirst}
-        config={manualContinueConfig}
-      />,
-    )
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
     const { guessInput, submitButton } = getGuessControls()
 
-    fireEvent.change(guessInput, { target: { value: TEST_COUNTRIES[0].name } })
+    fireEvent.change(guessInput, {
+      target: { value: TEST_COUNTRIES[0].name },
+    })
     fireEvent.click(submitButton)
 
     expect(screen.getByText(/earned 500 geodes/i)).toBeInTheDocument()
   })
 
-  it('shows positive feedback and waits for the player when auto-advance is disabled', () => {
-    render(
-      <GameScreen
-        countries={TEST_COUNTRIES}
-        random={alwaysSelectFirst}
-        config={manualContinueConfig}
-      />,
-    )
+  it('shows positive feedback and waits for the player after a correct guess', () => {
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
     const { guessInput, submitButton } = getGuessControls()
 
-    fireEvent.change(guessInput, { target: { value: TEST_COUNTRIES[0].name } })
+    fireEvent.change(guessInput, {
+      target: { value: TEST_COUNTRIES[0].name },
+    })
     fireEvent.click(submitButton)
 
-    expect(screen.getByText(/was brazil/i)).toBeInTheDocument()
-    expect(screen.getByText(TEST_COUNTRIES[0].name)).toBeInTheDocument()
+    expect(screen.getByText(/match with 'Brazil'/)).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: /start next turn/i }),
     ).toBeInTheDocument()
     expect(submitButton).toBeDisabled()
+    expect(guessInput).toBeDisabled()
   })
 
   it('disables clue purchases while a solved turn waits for the next round', () => {
-    render(
-      <GameScreen
-        countries={TEST_COUNTRIES}
-        random={alwaysSelectFirst}
-        config={manualContinueConfig}
-      />,
-    )
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
     const { guessInput, submitButton } = getGuessControls()
 
     fireEvent.click(screen.getByRole('button', { name: 'Region · 50 geodes' }))
@@ -173,6 +180,17 @@ describe('GameScreen', () => {
     expect(
       screen.getByText(/clue purchases are disabled until the next turn/i),
     ).toBeInTheDocument()
+  })
+
+  it('does not reveal a similarity percentage for an incorrect guess', () => {
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
+    const { guessInput, submitButton } = getGuessControls()
+
+    fireEvent.change(guessInput, { target: { value: 'Atlantis' } })
+    fireEvent.click(submitButton)
+
+    expect(screen.getByText(/not quite/i)).toBeInTheDocument()
+    expect(screen.queryByText(/% match with/i)).not.toBeInTheDocument()
   })
 
   it('keeps the guess input and clue panel active after an incorrect guess', () => {
@@ -196,14 +214,8 @@ describe('GameScreen', () => {
     expect(submitButton).toBeEnabled()
   })
 
-  it('starts a new turn after a correct guess and clears the feedback', () => {
-    render(
-      <GameScreen
-        countries={TEST_COUNTRIES}
-        random={alwaysSelectFirst}
-        config={manualContinueConfig}
-      />,
-    )
+  it('starts a new turn after the player clicks continue and clears the feedback', () => {
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
     const { guessInput, submitButton } = getGuessControls()
 
     fireEvent.change(guessInput, { target: { value: TEST_COUNTRIES[0].name } })
@@ -217,18 +229,13 @@ describe('GameScreen', () => {
     expect(
       screen.getByText(/submit a guess to see the result/i),
     ).toBeInTheDocument()
-    expect(screen.queryByText(/was brazil/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/% match with/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/start next turn/i)).not.toBeInTheDocument()
     expect(getGuessControls().guessInput).toBeEnabled()
   })
 
-  it('resets the clue state when starting a new turn', () => {
-    render(
-      <GameScreen
-        countries={TEST_COUNTRIES}
-        random={alwaysSelectFirst}
-        config={manualContinueConfig}
-      />,
-    )
+  it('preserves game state when continuing and resets the clue state', () => {
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
     const { guessInput, submitButton } = getGuessControls()
 
     fireEvent.click(screen.getByRole('button', { name: 'Region · 50 geodes' }))
@@ -245,6 +252,8 @@ describe('GameScreen', () => {
     ).toBeInTheDocument()
     expect(screen.getAllByText('Starting clue')).toHaveLength(1)
     expect(screen.getByText('1440')).toBeInTheDocument()
+    expect(screen.getByText('3')).toBeInTheDocument()
+    expect(screen.getByText('2')).toBeInTheDocument()
   })
 
   it('buys a life and deducts its cost in geodes', () => {
@@ -362,13 +371,7 @@ describe('GameScreen', () => {
   })
 
   it('skips immediately even while a resolved turn is waiting', () => {
-    render(
-      <GameScreen
-        countries={TEST_COUNTRIES}
-        random={alwaysSelectFirst}
-        config={manualContinueConfig}
-      />,
-    )
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
     const { guessInput, submitButton } = getGuessControls()
 
     fireEvent.change(guessInput, { target: { value: TEST_COUNTRIES[0].name } })

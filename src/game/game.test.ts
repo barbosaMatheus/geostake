@@ -7,6 +7,7 @@ import { revealClue } from './clues'
 import {
   applyGuess,
   createInitialGameState,
+  guessMatchPercent,
   isCorrectGuess,
   normalizeCountryName,
   resolveGuess,
@@ -50,6 +51,17 @@ describe('isCorrectGuess', () => {
       name: 'Falkland Islands (Islas Malvinas)',
     }
     expect(isCorrectGuess('Islas Malvinas', country)).toBe(true)
+  })
+})
+
+describe('guessMatchPercent', () => {
+  it('reports the accepted match percentage for a correct guess', () => {
+    expect(guessMatchPercent('Brazil', TEST_COUNTRIES[0])).toBe(100)
+    expect(guessMatchPercent('Brasil', TEST_COUNTRIES[0])).toBe(92)
+  })
+
+  it('returns null when the guess is not accepted', () => {
+    expect(guessMatchPercent('Atlantis', TEST_COUNTRIES[0])).toBeNull()
   })
 })
 
@@ -371,7 +383,7 @@ describe('skipTurn', () => {
 })
 
 describe('resolveGuess', () => {
-  it('automatically advances to the next turn on a correct guess by default', () => {
+  it('leaves the turn resolved on a correct guess so feedback is shown first', () => {
     const state = createInitialGameState(
       TEST_COUNTRIES,
       GAME_CONFIG,
@@ -385,9 +397,10 @@ describe('resolveGuess', () => {
       alwaysSelectFirst,
     )
 
-    expect(next.guessResult).toBeNull()
-    expect(next.turn).toBe(2)
-    expect(next.revealedClueIds).toHaveLength(1)
+    expect(next.guessResult?.outcome).toBe('correct')
+    expect(next.turn).toBe(1)
+    expect(next.startingClueId).toBe(state.startingClueId)
+    expect(next.revealedClueIds).toEqual(state.revealedClueIds)
     expect(next.player.geodes).toBe(
       ECONOMY_CONFIG.startingGeodes + ECONOMY_CONFIG.baseReward,
     )
@@ -395,7 +408,7 @@ describe('resolveGuess', () => {
     expect(next.mysteryCountry).toBe(TEST_COUNTRIES[0])
   })
 
-  it('carries the rewarded geodes into the auto-advanced turn', () => {
+  it('carries the rewarded geodes into the resolved turn', () => {
     const withClue = revealClue(
       createInitialGameState(TEST_COUNTRIES, GAME_CONFIG, alwaysSelectFirst),
       'region',
@@ -408,12 +421,60 @@ describe('resolveGuess', () => {
       alwaysSelectFirst,
     )
 
-    expect(next.turn).toBe(2)
-    expect(next.guessResult).toBeNull()
-    expect(next.purchasedClueIds).toEqual([])
+    expect(next.turn).toBe(1)
+    expect(next.guessResult?.outcome).toBe('correct')
+    if (next.guessResult?.outcome === 'correct') {
+      expect(next.guessResult.geodesAwarded).toBe(
+        ECONOMY_CONFIG.baseReward - ECONOMY_CONFIG.baseClueDeduction,
+      )
+    }
     expect(next.player.geodes).toBe(
       withClue.player.geodes +
         (ECONOMY_CONFIG.baseReward - ECONOMY_CONFIG.baseClueDeduction),
+    )
+  })
+
+  it('advances the solved turn only when startNextTurn is called', () => {
+    const resolved = resolveGuess(
+      createInitialGameState(TEST_COUNTRIES, GAME_CONFIG, alwaysSelectFirst),
+      TEST_COUNTRIES[0].name,
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+
+    expect(resolved.guessResult?.outcome).toBe('correct')
+
+    const next = startNextTurn(resolved, TEST_COUNTRIES, alwaysSelectFirst)
+
+    expect(next.turn).toBe(2)
+    expect(next.guessResult).toBeNull()
+    expect(next.revealedClueIds).toHaveLength(1)
+    expect(next.player.geodes).toBe(
+      ECONOMY_CONFIG.startingGeodes + ECONOMY_CONFIG.baseReward,
+    )
+    expect(next.player.lives).toBe(ECONOMY_CONFIG.startingLives)
+  })
+
+  it('auto-advances on a correct guess when continueOnCorrectGuess is enabled', () => {
+    const config = { ...GAME_CONFIG, continueOnCorrectGuess: true }
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    const next = resolveGuess(
+      state,
+      TEST_COUNTRIES[0].name,
+      TEST_COUNTRIES,
+      config,
+      alwaysSelectFirst,
+    )
+
+    expect(next.guessResult).toBeNull()
+    expect(next.turn).toBe(2)
+    expect(next.player.geodes).toBe(
+      ECONOMY_CONFIG.startingGeodes + ECONOMY_CONFIG.baseReward,
     )
   })
 

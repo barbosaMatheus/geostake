@@ -200,4 +200,38 @@ export class GuessChecker {
           this.maxEditDistance,
     )
   }
+
+  /**
+   * Returns the best accepted match percentage (0-100) between a guess and a
+   * country name: the highest Jaro-Winkler similarity, rounded to a whole
+   * percent, among the country-name variants that satisfy the same similarity,
+   * edit-distance, and exclusion gates as `isCorrect`. Returns `null` when no
+   * variant is accepted (the guess is not correct). An exact normalized match
+   * reports `100`.
+   */
+  matchPercent(guess: string, countryName: string): number | null {
+    const normalizedGuess = normalizeGuess(guess)
+    if (normalizedGuess === '') {
+      return null
+    }
+    let bestSimilarity = 0
+    let found = false
+    for (const variant of countryNameVariants(countryName)) {
+      if (isExcludedGuessPair(normalizedGuess, variant)) {
+        continue
+      }
+      const similarity = jaroWinklerSimilarity(normalizedGuess, variant)
+      if (
+        similarity >= this.minPercentMatch &&
+        damerauLevenshteinDistance(normalizedGuess, variant) <=
+          this.maxEditDistance
+      ) {
+        found = true
+        if (similarity > bestSimilarity) {
+          bestSimilarity = similarity
+        }
+      }
+    }
+    return found ? Math.round(bestSimilarity * 100) : null
+  }
 }

@@ -366,4 +366,46 @@ describe('GuessChecker', () => {
       expect(exactOnly.isCorrect('Romenia', 'Romania')).toBe(false)
     })
   })
+
+  describe('matchPercent', () => {
+    it('reports 100 for an exact normalized match', () => {
+      expect(checker.matchPercent('Romania', 'Romania')).toBe(100)
+      expect(checker.matchPercent('Brazil', 'Brazil')).toBe(100)
+    })
+
+    it('reports the rounded similarity for an accepted single-letter typo', () => {
+      expect(checker.matchPercent('Brasil', 'Brazil')).toBe(92)
+      expect(checker.matchPercent('Romenia', 'Romania')).toBe(93)
+    })
+
+    it('reports 100 when a guess matches a country-name variant exactly', () => {
+      expect(
+        checker.matchPercent(
+          'Falkland Islands',
+          'Falkland Islands (Islas Malvinas)',
+        ),
+      ).toBe(100)
+    })
+
+    it('returns null for an empty guess', () => {
+      expect(checker.matchPercent('', 'Romania')).toBeNull()
+    })
+
+    it('returns null when the guess is not correct', () => {
+      expect(checker.matchPercent('Atlantis', 'Romania')).toBeNull()
+      expect(checker.matchPercent('Canada', 'Brazil')).toBeNull()
+    })
+
+    it('returns null for hard-coded excluded confusables', () => {
+      expect(checker.matchPercent('Iran', 'Iraq')).toBeNull()
+      expect(checker.matchPercent('Ireland', 'Iceland')).toBeNull()
+    })
+
+    it('reports a percentage when the gates are relaxed enough to accept', () => {
+      const allowsTwoEdits = new GuessChecker({ maxEditDistance: 2 })
+
+      expect(checker.matchPercent('Nigeria', 'Niger')).toBeNull()
+      expect(allowsTwoEdits.matchPercent('Nigeria', 'Niger')).not.toBeNull()
+    })
+  })
 })

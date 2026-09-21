@@ -6,6 +6,7 @@ interface GuessFeedbackProps {
   lastIncorrectGuess: LastIncorrectGuess | null
   lives: number
   countryName: string
+  matchPercent: number | null
   onNextTurn: () => void
 }
 
@@ -14,6 +15,7 @@ function GuessFeedback({
   lastIncorrectGuess,
   lives,
   countryName,
+  matchPercent,
   onNextTurn,
 }: GuessFeedbackProps) {
   const [confirmingNewGame, setConfirmingNewGame] = useState(false)
@@ -71,8 +73,7 @@ function GuessFeedback({
         aria-live="polite"
       >
         <p className="guess-feedback-correct">
-          That&apos;s right - the mystery country was {guessResult.country.name}
-          . You earned {guessResult.geodesAwarded} geodes!
+          {`Correct! ${matchPercent ?? 100}% match with '${guessResult.country.name}'. You earned ${guessResult.geodesAwarded} geodes!`}
         </p>
         <button
           className="button-primary next-turn-button"
