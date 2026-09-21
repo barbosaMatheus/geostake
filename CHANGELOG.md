@@ -26,6 +26,8 @@ This project follows [Semantic Versioning](https://semver.org/).
   existing signatures and now delegate to the checker, so guesses like
   `Bahamas`, `St Kitts & Nevis`, `Romenia`, or `Islas Malvinas` count as
   correct. Application version bumped to `0.12.0`.
+- The landing screen now shows the application version (`package.json`
+  `version`, e.g. "GeoStake v0.12.0") as a small footer.
 
 [0.12.0]: https://github.com/barbosaMatheus/geostake
 

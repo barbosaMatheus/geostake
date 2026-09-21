@@ -126,6 +126,14 @@ body {
   text-align: center;
 }
 
+.landing-footer {
+  margin-top: clamp(1.5rem, 5vw, 3rem);
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  text-align: center;
+  user-select: none;
+}
+
 .settings-note {
   margin: 1.25rem auto 0;
   max-width: 30rem;

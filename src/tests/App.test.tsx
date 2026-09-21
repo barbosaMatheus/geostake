@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { version } from '../../package.json'
 import App from '../App'
 import { GAME_CONFIG } from '../game/config'
 import { createInitialGameState } from '../game/game'
@@ -48,6 +49,12 @@ describe('App landing and navigation', () => {
     ).toBeInTheDocument()
     expect(getLandingButtons().continueGame).toBeDisabled()
     expect(screen.queryByText('Geodes')).not.toBeInTheDocument()
+  })
+
+  it('shows the application version from package.json in the footer', () => {
+    renderApp(storage)
+
+    expect(screen.getByText(`GeoStake v${version}`)).toBeInTheDocument()
   })
 
   it('keeps Continue Game disabled when stored data is malformed', () => {

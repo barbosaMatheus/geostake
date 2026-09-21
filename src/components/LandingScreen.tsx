@@ -1,5 +1,7 @@
-const appName = import.meta.env.VITE_APP_NAME ?? 'GeoStake'
+import { version } from '../../package.json'
 import AppLogo from './AppLogo'
+
+const appName = import.meta.env.VITE_APP_NAME ?? 'GeoStake'
 
 interface LandingScreenProps {
   hasSavedGame: boolean
@@ -78,6 +80,10 @@ function LandingScreen({
           </button>
         </nav>
       )}
+
+      <footer className="landing-footer">
+        <span>GeoStake v{version}</span>
+      </footer>
     </div>
   )
 }
