@@ -4,6 +4,31 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.12.0] - 2026-09-21
+
+### Added
+
+- Centralized `GuessChecker` service (`src/game/guessChecker.ts`) that makes
+  guesses tolerant of reasonable human variation: case differences, `&`/`and`,
+  `Saint`/`St`, optional `The` and `of`, parenthetical alternative names, minor
+  punctuation/whitespace differences, and accented characters are normalized
+  before guesses are compared against country names. A guess is correct only
+  when it satisfies both a Jaro-Winkler similarity gate
+  (`USER_GUESS_MIN_PCT_MATCH`, default `0.90`) and a Damerau-Levenshtein edit
+  cap (`USER_GUESS_MAX_EDIT_DISTANCE`, default `1`), so a single-letter typo
+  like `Romenia` → `Romania` or `Japna` → `Japan` counts as correct while
+  confusable pairs such as `Nigeria` for a `Niger` turn stay rejected.
+  Single-edit confusables that no threshold can separate from tolerated typos
+  (`Iran`/`Iraq`, `Ireland`/`Iceland`, `Dominica`/`The Dominican`,
+  `The Gambia`/`Zambia`) are rejected unconditionally via the hard-coded
+  `USER_GUESS_EXCLUDED_PAIRS` set.
+  Top-level game functions (`isCorrectGuess`/`normalizeCountryName`) keep their
+  existing signatures and now delegate to the checker, so guesses like
+  `Bahamas`, `St Kitts & Nevis`, `Romenia`, or `Islas Malvinas` count as
+  correct. Application version bumped to `0.12.0`.
+
+[0.12.0]: https://github.com/barbosaMatheus/geostake
+
 ## [0.11.0] - 2026-09-19
 
 ### Added

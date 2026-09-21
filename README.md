@@ -182,6 +182,43 @@ their starting values. You can buy a life at any time during an active turn for
 `lifeCost` geodes (respecting `maxLives` and never going into negative geodes).
 Economy rules are pure, unit-tested functions in `src/game/economy.ts`.
 
+## Guess Validation
+
+Guesses are validated by a single, reusable service (`src/game/guessChecker.ts`).
+Both the player's guess and each country-name variant are normalized — ignoring
+case, `&`/`and`, `Saint`/`St`, optional `The` and `of`, punctuation and
+whitespace differences, and accented characters — and then compared so a
+single-letter typo is tolerated but confusable countries are rejected.
+Parenthetical names are accepted as alternatives: for
+`Falkland Islands (Islas Malvinas)`, all of `Falkland Islands`,
+`Islas Malvinas`, and the full name are accepted. Examples that count as
+correct include `Bahamas` for `The Bahamas`, `St Kitts & Nevis` for
+`Saint Kitts and Nevis`, and `Romenia` for `Romania`, while clearly wrong
+guesses such as `Atlantis` — and confusable pairs such as `Nigeria` for a
+`Niger` turn — are rejected.
+
+The matching rules are centralised in `src/game/guessConfig.ts`. A guess counts
+as correct only when it meets both gates:
+
+| Setting                        | Default | Description                                                                               |
+| ------------------------------ | ------- | ----------------------------------------------------------------------------------------- |
+| `USER_GUESS_MIN_PCT_MATCH`     | `0.90`  | Minimum Jaro-Winkler similarity against a country-name variant.                           |
+| `USER_GUESS_MAX_EDIT_DISTANCE` | `1`     | Maximum Damerau-Levenshtein edit distance (an adjacent transposition counts as one edit). |
+
+The confidence percentile alone is not enough: short confusable pairs like
+`Niger`/`Nigeria` score very high on Jaro-Winkler, so the edit-distance cap is
+what keeps single-letter mistakes (`Romenia` → `Romania`, `Japna` → `Japan`)
+acceptable while `Nigeria` vs `Niger`, `Australia` vs `Austria`, `Slovakia` vs
+`Slovenia`, and `Malawi` vs `Mali` require two edits and stay rejected.
+
+Some confusable pairs are only one edit apart — `Iran`/`Iraq` is a single
+letter, exactly like `Romenia`/`Romania` — so no threshold can separate them
+from legitimately tolerated typos. These are handled by a hard-coded exclusion
+list (`USER_GUESS_EXCLUDED_PAIRS` in `src/game/guessConfig.ts`): the guess is
+never accepted for the other country, unconditionally. Currently excluded:
+`Iran`/`Iraq`, `Ireland`/`Iceland`, `Dominica`/`The Dominican`, and
+`The Gambia`/`Zambia`.
+
 ## Debug Skip
 
 While in development, a **Skip** button appears under the Turn column of the
@@ -327,7 +364,7 @@ npm run preview
 ## GitHub Pages
 
 The repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml`)
-that runs on pushes to `main` (and manually via *Actions → Run workflow*). It
+that runs on pushes to `main` (and manually via _Actions → Run workflow_). It
 installs dependencies, runs lint, type checking and tests, builds the app with
 `VITE_BASE_PATH=/geostake/`, and publishes `dist/` to GitHub Pages.
 
@@ -394,10 +431,10 @@ available:
 Copy `.env.example` to `.env` to override defaults. All variables are
 non-secret and client-visible.
 
-| Variable          | Default    | Description                                                              |
-| ----------------- | ---------- | ------------------------------------------------------------------------ |
-| `VITE_APP_NAME`   | `GeoStake` | Application name shown in the page header                                 |
-| `VITE_BASE_PATH`  | `/`        | Vite `base` (asset/route prefix). Set to `/geostake/` for GitHub Pages.  |
+| Variable         | Default    | Description                                                             |
+| ---------------- | ---------- | ----------------------------------------------------------------------- |
+| `VITE_APP_NAME`  | `GeoStake` | Application name shown in the page header                               |
+| `VITE_BASE_PATH` | `/`        | Vite `base` (asset/route prefix). Set to `/geostake/` for GitHub Pages. |
 
 ## Playing GeoStake Offline
 

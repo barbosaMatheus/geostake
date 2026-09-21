@@ -5,14 +5,17 @@ import { GAME_CONFIG, type GameConfig } from './config'
 import { selectStartingClue } from './clues'
 import { applyGeodeReward, calculateGuessReward } from './economy'
 import { ECONOMY_CONFIG, type EconomyConfig } from './economyConfig'
+import { GuessChecker, normalizeGuess } from './guessChecker'
 import { selectMysteryCountry } from './selectCountry'
 
+const defaultGuessChecker = new GuessChecker()
+
 export function normalizeCountryName(name: string): string {
-  return name.trim().toLowerCase()
+  return normalizeGuess(name)
 }
 
 export function isCorrectGuess(guess: string, country: Country): boolean {
-  return normalizeCountryName(guess) === normalizeCountryName(country.name)
+  return defaultGuessChecker.isCorrect(guess, country.name)
 }
 
 export function createInitialGameState(

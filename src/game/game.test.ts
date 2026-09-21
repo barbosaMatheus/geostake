@@ -38,6 +38,19 @@ describe('isCorrectGuess', () => {
   it('rejects a mismatched guess', () => {
     expect(isCorrectGuess('Atlantis', TEST_COUNTRIES[0])).toBe(false)
   })
+
+  it('accepts a minor typo via the guess checker', () => {
+    const country = { ...TEST_COUNTRIES[0], name: 'Romania' }
+    expect(isCorrectGuess('Romenia', country)).toBe(true)
+  })
+
+  it('accepts a parenthetical alternative via the guess checker', () => {
+    const country = {
+      ...TEST_COUNTRIES[0],
+      name: 'Falkland Islands (Islas Malvinas)',
+    }
+    expect(isCorrectGuess('Islas Malvinas', country)).toBe(true)
+  })
 })
 
 describe('createInitialGameState', () => {
@@ -162,6 +175,20 @@ describe('applyGuess', () => {
 
     expect(next.player.lives).toBe(ECONOMY_CONFIG.startingLives)
     expect(next.guessResult?.outcome).toBe('correct')
+  })
+
+  it('accepts a lenient typo as a correct guess', () => {
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    const next = applyGuess(state, 'Brasil')
+
+    expect(next.guessResult?.outcome).toBe('correct')
+    expect(next.player.geodes).toBe(
+      ECONOMY_CONFIG.startingGeodes + ECONOMY_CONFIG.baseReward,
+    )
   })
 
   it('does not reduce lives below zero and closes the turn when they run out', () => {

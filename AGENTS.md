@@ -1213,6 +1213,29 @@ Debug Skip (temporary):
 
 ---
 
+## 39. Guess Validation Is Centralized
+
+Guesses are validated by a single, reusable service — never by React components or inline handlers.
+
+The authoritative source of truth is `src/game/guessChecker.ts` (`GuessChecker` class) plus `src/game/guessConfig.ts`:
+
+* `GuessChecker` (default instance `new GuessChecker()`) decides whether a guess matches a country name. It normalizes both sides and then fuzzy-matches with Jaro-Winkler similarity against every country-name variant.
+* `normalizeGuess` treats case, `&`/`and`, `Saint`/`St`, optional leading `The` and `of`, punctuation (`.,-’”()`), repeated whitespace, and accented characters (`NFD` decomposition) as equivalent.
+* `countryNameVariants` treats each parenthetical alternative (`Falkland Islands (Islas Malvinas)`) as a separately acceptable full name, base name, or parenthetical content.
+* A guess is correct when any normalized country-name variant satisfies both gates: `USER_GUESS_MIN_PCT_MATCH` (default `0.90`), the minimum Jaro-Winkler similarity, and `USER_GUESS_MAX_EDIT_DISTANCE` (default `1`), the maximum Damerau-Levenshtein edit distance (adjacent transpositions count as one edit). The edit cap is what keeps a single-letter typo (`Romenia` → `Romania`) acceptable while rejecting confusable country pairs that need two edits (`Nigeria` vs `Niger`, `Australia` vs `Austria`, `Slovakia` vs `Slovenia`, `Malawi` vs `Mali`), which can score above the Jaro-Winkler threshold on their own.
+* `USER_GUESS_EXCLUDED_PAIRS` (in `guessConfig.ts`) is a hard-coded list of confusable country pairs whose normalized names are one edit apart (`iran`/`iraq`, `ireland`/`iceland`, `dominica`/`dominican`, `gambia`/`zambia`). No similarity/editing rule can reject these while still accepting single-letter typos (`Iran` vs `Iraq` is a one-character difference, just like `Romenia` vs `Romania`), so `isExcludedGuessPair` vetoes them before the gates apply — the exclusions are unconditional and the two gates alone must never be loosened to admit a pair in this list.
+* `jaroSimilarity`/`jaroWinklerSimilarity`/`damerauLevenshteinDistance` are the pure, dependency-free matching functions.
+* `GuessChecker` accepts a partial `GuessCheckerConfig` and merges it over `GUESS_CHECKER_CONFIG`, so a single knob (`{ minPercentMatch }` or `{ maxEditDistance }`) can be overridden in tests/future difficulty presets.
+
+Conventions:
+
+* `src/game/game.ts` (and therefore `applyGuess`/`resolveGuess`/`useGame`) delegates to the module-level default `GuessChecker` through `isCorrectGuess`; `normalizeCountryName` delegates to `normalizeGuess`. Keep those public names/signatures stable for callers.
+* Do not reimplement normalization or fuzzy matching in components, hooks, or game files, and do not add third-party fuzzy-matching libraries — the Jaro-Winkler and Damerau-Levenshtein implementations are intentionally small and self-contained.
+* A country is considered guessed correctly if any valid normalized variant of its name meets both gates (accepted guesses include `Bahamas` → `The Bahamas`, `St Kitts & Nevis` → `Saint Kitts and Nevis`, `Romenia` → `Romania`, `Japna` → `Japan`, and `Islas Malvinas` → `Falkland Islands (Islas Malvinas)`).
+* Clearly incorrect guesses (e.g. `Atlantis`, `Canada` for Brazil), confusable pairs needing more than one edit (e.g. `Nigeria` for a `Niger` turn), and every pair listed in `USER_GUESS_EXCLUDED_PAIRS` (e.g. `Iran` for an `Iraq` turn) must remain rejected; do not loosen the thresholds to accept arbitrary names.
+
+---
+
 # Agent Workflow
 
 When beginning work on a task:
