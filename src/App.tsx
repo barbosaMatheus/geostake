@@ -2,6 +2,7 @@ import { useState } from 'react'
 import GameScreen from './components/GameScreen'
 import LandingScreen from './components/LandingScreen'
 import SettingsScreen from './components/SettingsScreen'
+import TutorialScreen from './components/TutorialScreen'
 import { COUNTRIES } from './data/countries'
 import type { AppView } from './navigation/views'
 import {
@@ -58,6 +59,10 @@ function App({ storage }: AppProps) {
     setView('game')
   }
 
+  const handleTutorial = () => {
+    setView('tutorial')
+  }
+
   switch (view) {
     case 'game':
       return (
@@ -68,6 +73,8 @@ function App({ storage }: AppProps) {
           onExit={goToLanding}
         />
       )
+    case 'tutorial':
+      return <TutorialScreen countries={COUNTRIES} onExit={goToLanding} />
     case 'settings':
       return <SettingsScreen onBack={goToLanding} />
     case 'landing':
@@ -79,6 +86,7 @@ function App({ storage }: AppProps) {
           onContinueGame={handleContinueGame}
           onConfirmNewGame={startFreshGame}
           onCancelNewGame={() => setConfirmingNewGame(false)}
+          onTutorial={handleTutorial}
           onSettings={() => setView('settings')}
         />
       )

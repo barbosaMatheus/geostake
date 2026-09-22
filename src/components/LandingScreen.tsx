@@ -10,6 +10,7 @@ interface LandingScreenProps {
   onContinueGame: () => void
   onConfirmNewGame: () => void
   onCancelNewGame: () => void
+  onTutorial: () => void
   onSettings: () => void
 }
 
@@ -20,6 +21,7 @@ function LandingScreen({
   onContinueGame,
   onConfirmNewGame,
   onCancelNewGame,
+  onTutorial,
   onSettings,
 }: LandingScreenProps) {
   return (
@@ -70,6 +72,13 @@ function LandingScreen({
             onClick={onContinueGame}
           >
             Continue Game
+          </button>
+          <button
+            className="button-secondary"
+            type="button"
+            onClick={onTutorial}
+          >
+            Tutorial
           </button>
           <button
             className="button-secondary"

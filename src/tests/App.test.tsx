@@ -36,6 +36,7 @@ function getLandingButtons() {
   return {
     newGame: screen.getByRole('button', { name: /^new game$/i }),
     continueGame: screen.getByRole('button', { name: /continue game/i }),
+    tutorial: screen.getByRole('button', { name: /^tutorial$/i }),
     settings: screen.getByRole('button', { name: /^settings$/i }),
   }
 }
@@ -155,5 +156,104 @@ describe('App landing and navigation', () => {
 
     expect(screen.getByText('1000')).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+})
+
+describe('App tutorial', () => {
+  it('shows a Tutorial button on the landing screen', () => {
+    renderApp(storage)
+
+    expect(getLandingButtons().tutorial).toBeInTheDocument()
+  })
+
+  it('opens the Tutorial view with 1000 geodes and 3 lives', () => {
+    renderApp(storage)
+
+    fireEvent.click(getLandingButtons().tutorial)
+
+    expect(
+      screen.getByRole('textbox', { name: /guess the country/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('1000')).toBeInTheDocument()
+    expect(screen.getByText('3')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: /mystery country/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('?????')).toBeInTheDocument()
+  })
+
+  it('always uses Brazil as the tutorial mystery country', () => {
+    renderApp(storage)
+
+    fireEvent.click(getLandingButtons().tutorial)
+
+    fireEvent.change(screen.getByRole('textbox', { name: /guess the country/i }), {
+      target: { value: 'Brazil' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /submit guess/i }))
+
+    expect(screen.getByText(/match with 'Brazil'/)).toBeInTheDocument()
+    expect(screen.getByText('Brazil')).toBeInTheDocument()
+  })
+
+  it('does not create or modify a save when entering and exiting the tutorial', () => {
+    expect(savedGameExists(storage)).toBe(false)
+    renderApp(storage)
+
+    fireEvent.click(getLandingButtons().tutorial)
+    fireEvent.click(screen.getByRole('button', { name: /^home$/i }))
+
+    expect(getLandingButtons().newGame).toBeInTheDocument()
+    expect(savedGameExists(storage)).toBe(false)
+    expect(storage.size).toBe(0)
+  })
+
+  it('leaves an existing saved game untouched while the tutorial is played', () => {
+    seedSavedGame(1150)
+    renderApp(storage)
+
+    fireEvent.click(getLandingButtons().tutorial)
+    fireEvent.click(screen.getByRole('button', { name: 'Region · 50 geodes' }))
+    expect(screen.getByText('950')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /^home$/i }))
+
+    expect(getLandingButtons().newGame).toBeInTheDocument()
+    expect(loadResumableGame(COUNTRIES, storage)?.player.geodes).toBe(1150)
+    expect(loadResumableGame(COUNTRIES, storage)?.player.lives).toBe(3)
+  })
+
+  it('starts a fresh tutorial instance on every visit', () => {
+    renderApp(storage)
+
+    fireEvent.click(getLandingButtons().tutorial)
+    fireEvent.click(screen.getByRole('button', { name: 'Region · 50 geodes' }))
+    expect(screen.getByText('950')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /^home$/i }))
+    fireEvent.click(getLandingButtons().tutorial)
+
+    expect(screen.getByText('1000')).toBeInTheDocument()
+    expect(screen.getByText('3')).toBeInTheDocument()
+    expect(
+      screen.getByText(/submit a guess to see the result/i),
+    ).toBeInTheDocument()
+  })
+
+  it('Home exits the tutorial back to the landing screen', () => {
+    renderApp(storage)
+
+    fireEvent.click(getLandingButtons().tutorial)
+    expect(
+      screen.getByRole('textbox', { name: /guess the country/i }),
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /^home$/i }))
+
+    expect(getLandingButtons().newGame).toBeInTheDocument()
+    expect(getLandingButtons().tutorial).toBeInTheDocument()
+    expect(
+      screen.queryByRole('textbox', { name: /guess the country/i }),
+    ).not.toBeInTheDocument()
   })
 })
