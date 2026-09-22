@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { GAME_CONFIG, type GameConfig } from '../game/config'
 import { guessMatchPercent } from '../game/game'
 import { usePersistentGame } from '../hooks/usePersistentGame'
@@ -8,6 +9,7 @@ import CluePanel from './CluePanel'
 import GameTitle from './GameTitle'
 import GuessFeedback from './GuessFeedback'
 import GuessForm from './GuessForm'
+import HelpOverlay from './HelpOverlay'
 import MysteryCountry from './MysteryCountry'
 import StatusBar from './StatusBar'
 
@@ -37,6 +39,7 @@ function GameScreen({
     purchaseLife,
     lastIncorrectGuess,
   } = usePersistentGame(countries, config, random, initialGameState, storage)
+  const [helpOpen, setHelpOpen] = useState(false)
   const { player, mysteryCountry, guessResult } = gameState
   const turnResolved = guessResult !== null || player.lives === 0
   const matchPercent =
@@ -46,7 +49,7 @@ function GameScreen({
 
   return (
     <main className="app game-screen">
-      <GameTitle />
+      <GameTitle onHelp={() => setHelpOpen(true)} />
       <StatusBar
         player={player}
         turn={gameState.turn}
@@ -77,6 +80,7 @@ function GameScreen({
         matchPercent={matchPercent}
         onNextTurn={startNextTurn}
       />
+      <HelpOverlay open={helpOpen} onClose={() => setHelpOpen(false)} />
     </main>
   )
 }

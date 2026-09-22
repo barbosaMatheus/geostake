@@ -58,6 +58,14 @@ body {
   max-width: 56rem;
 }
 
+/* On the game screen the title row keeps the logo left, the title centered, and
+   the help button on the right so the heading does not shift. */
+.game-screen .app-header-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  width: 100%;
+}
+
 .app h1 {
   margin: 0;
   font-size: clamp(2.5rem, 10vw, 4.5rem);
@@ -231,6 +239,61 @@ body {
 .skip-button {
   border-color: var(--color-border);
   color: var(--color-foreground);
+}
+
+.help-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid var(--color-accent);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.help-button:hover {
+  filter: brightness(1.05);
+}
+
+.help-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.help-dialog {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+  width: 100%;
+  max-width: 30rem;
+  max-height: 85dvh;
+  overflow-y: auto;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.help-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.help-list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding-left: 1.1rem;
 }
 
 .skip-button {

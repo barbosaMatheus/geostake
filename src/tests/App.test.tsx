@@ -140,4 +140,20 @@ describe('App landing and navigation', () => {
 
     expect(getLandingButtons().newGame).toBeInTheDocument()
   })
+
+  it('does not leave the help overlay open when returning to the Game screen', () => {
+    renderApp(storage)
+    fireEvent.click(getLandingButtons().newGame)
+
+    fireEvent.click(screen.getByRole('button', { name: /help/i }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /^home$/i }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    fireEvent.click(getLandingButtons().continueGame)
+
+    expect(screen.getByText('1000')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
 })

@@ -16,6 +16,14 @@ function getGuessControls() {
   }
 }
 
+function helpButton() {
+  return screen.getByRole('button', { name: /help/i })
+}
+
+function helpDialog() {
+  return screen.getByRole('dialog', { name: /how to play geostake/i })
+}
+
 describe('GameScreen', () => {
   it('renders the header, resources, mystery country, clue area, and guess controls', () => {
     render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
@@ -426,5 +434,88 @@ describe('GameScreen', () => {
       expect(game?.purchasedClueIds).toEqual(['capital'])
       expect(game?.player.geodes).toBe(750)
     })
+  })
+})
+
+describe('GameScreen help overlay', () => {
+  it('renders a help button that opens the overlay with the instructions', () => {
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
+
+    expect(
+      screen.getByRole('button', { name: /help/i }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    fireEvent.click(helpButton())
+
+    const dialog = helpDialog()
+    expect(dialog).toBeInTheDocument()
+    expect(screen.getByText(/identify the mystery country/i)).toBeInTheDocument()
+    expect(screen.getByText(/free clue/i)).toBeInTheDocument()
+    expect(screen.getByText(/buy additional clues with geodes/i)).toBeInTheDocument()
+    expect(screen.getByText(/1000 geodes/)).toBeInTheDocument()
+    expect(screen.getByText(/3 lives/)).toBeInTheDocument()
+    expect(screen.getByText(/incorrect guess costs a life/i)).toBeInTheDocument()
+    expect(screen.getByText(/buy extra lives/i)).toBeInTheDocument()
+    expect(screen.getByText(/running out of lives ends the game/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/purchasing skips will be available in a future update/i),
+    ).toBeInTheDocument()
+  })
+
+  it('dismisses the overlay with the Close button and can be reopened', () => {
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
+
+    fireEvent.click(helpButton())
+    expect(helpDialog()).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /close/i }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    fireEvent.click(helpButton())
+    expect(helpDialog()).toBeInTheDocument()
+  })
+
+  it('dismisses the overlay with the Escape key', () => {
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
+
+    fireEvent.click(helpButton())
+    expect(helpDialog()).toBeInTheDocument()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('dismisses the overlay when clicking the backdrop', () => {
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
+
+    fireEvent.click(helpButton())
+    const overlay = helpDialog().parentElement
+    expect(overlay).not.toBeNull()
+
+    fireEvent.click(overlay as HTMLElement)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('does not persist help state anywhere in storage', () => {
+    const storage = createMemoryStorage()
+    const { unmount } = render(
+      <GameScreen
+        countries={TEST_COUNTRIES}
+        random={alwaysSelectFirst}
+        storage={storage}
+      />,
+    )
+
+    fireEvent.click(helpButton())
+    expect(helpDialog()).toBeInTheDocument()
+
+    expect(storage.size).toBe(1)
+    expect(loadResumableGame(TEST_COUNTRIES, storage)).not.toBeNull()
+
+    unmount()
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })

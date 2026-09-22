@@ -321,6 +321,7 @@ Conventions:
 
 * Create one screen component per view in `src/components` (`LandingScreen`, `GameScreen`, `SettingsScreen`). `App` switches on the `AppView` union and passes typed callbacks (`onNewGame`, `onSettings`, `onBack`, `onExit`) rather than raw setters.
 * `GameScreen` accepts an optional `onExit` callback and passes it to `StatusBar` as `onHome`, which renders a subtle **Home** button inside the Geodes status column (there is no separate header navigation bar on the game screen). Never let navigation state live inside `useGame` or game logic.
+* The game screen header's **Help** button (question-mark icon, `aria-label="Help"`) is transient UI state owned by `GameScreen` (a plain `useState` for `helpOpen`, passed to `GameTitle` as `onHelp` and to `HelpOverlay`). It is never persisted, never part of `GameState`, and resets automatically whenever the Game screen unmounts or the page reloads, so navigation away and back always starts with the overlay closed.
 * The landing screen's **Continue Game** button is enabled only when a valid saved game exists (`hasSavedGame` prop computed by `App` from the persistence layer, never by the screen itself). Reaching the landing screen always rechecks the save so the button reflects the latest game.
 * Do not introduce React Router (or a similar dependency) unless the app genuinely needs URL-based routing; view state is sufficient for the current scope.
 

@@ -4,6 +4,22 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.13.0] - 2026-09-22
+
+### Added
+
+- A **Help** button (question-mark icon, `aria-label="Help"`) in the game
+  screen header. It opens a dismissible overlay with short, player-focused
+  instructions covering the mystery-country goal, free starting clues, clue and
+  life purchases, the starting geodes/lives, lives being lost on incorrect
+  guesses, running out of lives ending the game, and the upcoming skip-purchase
+  feature. The overlay closes via its Close button, the Escape key, or a
+  backdrop click and can be reopened at any time. Help state is transient UI
+  state (never persisted; reset whenever the Game screen is left or the page
+  reloads) and does not touch gameplay. Application version bumped to `0.13.0`.
+
+[0.13.0]: https://github.com/barbosaMatheus/geostake
+
 ## [0.12.0] - 2026-09-21
 
 ### Added

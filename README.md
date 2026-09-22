@@ -18,6 +18,8 @@ input, guess feedback, a reward for correctly solving a turn, and a way to
 start the next turn. On wider screens the clue tiers render in a two-column
 grid to use horizontal tablet space. A subtle _Home_ button returns to the menu
 at any time, and a debug _Skip_ button advances to the next turn for free. The
+game title carries a **?** Help button that opens a dismissible overlay with
+the basic rules of play. The
 current game is saved locally, so
 refreshing or reopening the app lets you continue where you left off. The
 application is powered by a canonical country dataset generated from the
@@ -36,7 +38,7 @@ There are three views, each a small focused component:
 | View             | Description                                                                                                                     |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | `LandingScreen`  | Default view. GeoStake branding, **New Game**, **Continue Game** (enabled when a save exists), **Settings**.                    |
-| `GameScreen`     | The full gameplay screen. Status columns for geodes (with **Home**), lives (with **Buy Life**), and turn (with debug **Skip**). |
+| `GameScreen`     | The full gameplay screen. Status columns for geodes (with **Home**), lives (with **Buy Life**), and turn (with debug **Skip**); header **?** help overlay. |
 | `SettingsScreen` | Placeholder page with a _Back to Landing_ control.                                                                              |
 
 `App` owns a single `AppView` state (`'landing' | 'game' | 'settings'`,
