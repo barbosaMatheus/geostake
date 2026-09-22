@@ -37,11 +37,12 @@ There are three views, each a small focused component:
 
 | View             | Description                                                                                                                     |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `LandingScreen`  | Default view. GeoStake branding, **New Game**, **Continue Game** (enabled when a save exists), **Settings**.                    |
+| `LandingScreen`  | Default view. GeoStake branding, **New Game**, **Continue Game** (enabled when a save exists), **Tutorial**, **Settings**.       |
 | `GameScreen`     | The full gameplay screen. Status columns for geodes (with **Home**), lives (with **Buy Life**), and turn (with debug **Skip**); header **?** help overlay. |
+| `TutorialScreen` | A self-contained walkthrough of the game, always using **Brazil** as its mystery country. It uses its own isolated, non-persistent tutorial state (never a save) with the standard 1000 geodes / 3 lives / 1 free tier-0 clue start, and a **Home** button that exits back to landing. |
 | `SettingsScreen` | Placeholder page with a _Back to Landing_ control.                                                                              |
 
-`App` owns a single `AppView` state (`'landing' | 'game' | 'settings'`,
+`App` owns a single `AppView` state (`'landing' | 'game' | 'tutorial' | 'settings'`,
 defined in `src/navigation/views.ts`) starting at `'landing'` and switches
 between views without a router. Game logic is untouched by navigation and
 remains in `src/game`, `src/hooks`, and the individual screen components.

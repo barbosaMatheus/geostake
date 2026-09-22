@@ -126,6 +126,8 @@ describe('useTutorial', () => {
 
     act(() => {
       result.current.revealClue('capital')
+    })
+    act(() => {
       result.current.submitGuess('Atlantis')
     })
 

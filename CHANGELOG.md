@@ -4,6 +4,26 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.14.0] - 2026-09-22
+
+### Added
+
+- A **Tutorial** button on the landing screen that opens a dedicated,
+  self-contained Tutorial screen. The tutorial always uses **Brazil** as its
+  mystery country and is initialized with the standard starting values (1000
+  geodes and 3 lives), exactly one free tier-0 starting clue, and a brand-new
+  turn. Guessing, buying clues, buying lives, and life deductions behave
+  exactly like the regular game.
+- Tutorial progress is fully isolated: it lives in its own non-persistent
+  `TutorialState` (never written to or read from storage), stays independent
+  from any normal game state, and can never create, modify, or remove a saved
+  game. Entering the tutorial never touches an existing save.
+- A fresh, clean tutorial instance is created on every visit (re-entering the
+  tutorial always restarts from the starting state), and a **Home** button in
+  the tutorial status column exits back to the landing screen at any time.
+  The "Start Next Turn" button simply resets the tutorial to its starting
+  state. Application version bumped to `0.14.0`.
+
 ## [0.13.0] - 2026-09-22
 
 ### Added
