@@ -2,7 +2,12 @@ import type { ClueDefinition, ClueId, ClueValue } from '../types/clue'
 import type { Country } from '../types/country'
 import type { GameState } from '../types/game'
 import type { GeodeAmount } from '../types/player'
-import { CLUE_COST_MULTIPLIER, CLUES, getClueDefinition } from './clueConfig'
+import {
+  CLUE_COST_MULTIPLIER,
+  CLUES,
+  findClueDefinition,
+  getClueDefinition,
+} from './clueConfig'
 import { pickRandom } from './random'
 
 export function getAvailableClues(
@@ -83,7 +88,10 @@ export function revealClue(
   if (state.guessResult !== null || state.player.lives <= 0) {
     return state
   }
-  const definition = getClueDefinition(clueId)
+  const definition = findClueDefinition(clueId)
+  if (definition === undefined) {
+    return state
+  }
   if (definition.tier === 0 && clueId !== state.startingClueId) {
     return state
   }

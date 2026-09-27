@@ -72,6 +72,27 @@ describe('GameScreen', () => {
     expect(screen.queryByText('Population Density')).not.toBeInTheDocument()
   })
 
+  it('never surfaces the country outline or lowest elevation clues in the UI', () => {
+    render(
+      <GameScreen
+        countries={[{ ...TEST_COUNTRIES[1], lowestElevationM: -8 }]}
+        random={alwaysSelectFirst}
+      />,
+    )
+
+    expect(screen.queryByText('Country Outline')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /Country Outline/ }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('img', { name: 'Country outline clue' }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText('Lowest Elevation')).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Country Flag · 375 geodes' }),
+    ).toBeEnabled()
+  })
+
   it('requires a non-empty guess before enabling the submit button', () => {
     render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
     const { guessInput, submitButton } = getGuessControls()
@@ -441,25 +462,33 @@ describe('GameScreen help overlay', () => {
   it('renders a help button that opens the overlay with the instructions', () => {
     render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
 
-    expect(
-      screen.getByRole('button', { name: /help/i }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /help/i })).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
     fireEvent.click(helpButton())
 
     const dialog = helpDialog()
     expect(dialog).toBeInTheDocument()
-    expect(screen.getByText(/identify the mystery country/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/identify the mystery country/i),
+    ).toBeInTheDocument()
     expect(screen.getByText(/free clue/i)).toBeInTheDocument()
-    expect(screen.getByText(/buy additional clues with geodes/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/buy additional clues with geodes/i),
+    ).toBeInTheDocument()
     expect(screen.getByText(/1000 geodes/)).toBeInTheDocument()
     expect(screen.getByText(/3 lives/)).toBeInTheDocument()
-    expect(screen.getByText(/incorrect guess costs a life/i)).toBeInTheDocument()
-    expect(screen.getByText(/buy extra lives/i)).toBeInTheDocument()
-    expect(screen.getByText(/running out of lives ends the game/i)).toBeInTheDocument()
     expect(
-      screen.getByText(/purchasing skips will be available in a future update/i),
+      screen.getByText(/incorrect guess costs a life/i),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/buy extra lives/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/running out of lives ends the game/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /purchasing skips will be available in a future update/i,
+      ),
     ).toBeInTheDocument()
   })
 

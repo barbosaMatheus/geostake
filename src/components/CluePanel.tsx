@@ -4,6 +4,7 @@ import {
   getClueKind,
   getClueTiers,
   getTierLabel,
+  isClueHiddenInUi,
 } from '../game/clueConfig'
 import {
   formatClueValue,
@@ -34,7 +35,10 @@ function CluePanel({
   disabled = false,
   onReveal,
 }: CluePanelProps) {
-  const tiers = getClueTiers(CLUES)
+  const turnClues = getTurnClues(startingClueId, CLUES).filter(
+    (clue) => !isClueHiddenInUi(clue.id),
+  )
+  const tiers = getClueTiers(turnClues)
 
   return (
     <section className="section-card clue-panel" aria-label="Clues">
@@ -49,6 +53,7 @@ function CluePanel({
           <ClueTierBlock
             key={tier}
             tier={tier}
+            clues={turnClues}
             country={country}
             geodes={geodes}
             startingClueId={startingClueId}
@@ -92,22 +97,24 @@ function ClueValueContent({
 
 function ClueTierBlock({
   tier,
+  clues,
   country,
   geodes,
   startingClueId,
   revealedClueIds,
   disabled,
   onReveal,
-}: Omit<ClueRowProps, 'clue'> & { tier: ClueTier }) {
-  const clues = getTurnClues(startingClueId, CLUES).filter(
-    (clue) => clue.tier === tier,
-  )
+}: Omit<ClueRowProps, 'clue'> & {
+  tier: ClueTier
+  clues: readonly ClueDefinition<ClueValue>[]
+}) {
+  const tierClues = clues.filter((clue) => clue.tier === tier)
 
   return (
     <div className={tier === 0 ? 'clue-tier clue-tier-full' : 'clue-tier'}>
       <h3 className="clue-tier-title">{getTierLabel(tier)}</h3>
       <ul className="clue-list">
-        {clues.map((clue) => (
+        {tierClues.map((clue) => (
           <ClueRow
             key={clue.id}
             clue={clue}

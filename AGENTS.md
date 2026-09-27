@@ -1138,12 +1138,17 @@ The clue system uses **numeric tiers** (`0` Free, `1` Low, `2` Medium, `3` High,
 
 The authoritative source of truth is `src/game/clueConfig.ts`:
 
-* `CLUES` — the data-driven list of `ClueDefinition` entries. Each entry owns its `id`, `tier`, `baseCost`, display `label`, and the pure functions `isAvailable`, `getValue`, and `formatValue`.
+* `CLUES` — the data-driven list of `ClueDefinition` entries. Each entry owns its `id`, `tier`, `baseCost`, display `label`, and the pure functions `isAvailable`, `getValue`, and `formatValue`. The `ClueId` union in `src/types/clue.ts` must stay in sync with these ids: a retired clue is removed from both, which makes `getClueDefinition` throw and causes `revealClue` to no-op (a stale id from a save cannot crash the game).
 * `CLUE_COST_MULTIPLIER` — the current cost multiplier, defaulting to `5` (the future "normal" difficulty). A clue's current cost is `baseCost × CLUE_COST_MULTIPLIER`. Do not hard-code clue costs or tiers in components or game-logic files.
+* `CLUES_HIDDEN_IN_UI` / `isClueHiddenInUi` — clues that stay fully configured (availability, cost, reveal, and economy rules all apply) but are filtered out of the player-facing `CluePanel`. `country-outline` is currently hidden this way; restoring it is a one-line change and must not touch the outline implementation (`src/visual/*`, `CountryOutline`, the bundled TopoJSON) or the clue definition.
 
 Base costs are the normalized source values (0/10/20/50/75); the multiplier produces the in-game costs (0/50/100/250/375). Difficulty modes are **not** implemented; the multiplier is centralized so a future difficulty selector can change it without touching clue logic.
 
 Gameplay rules live as pure, testable functions in `src/game/clues.ts` (availability, value extraction, formatting, costing, random tier-0 starting-clue selection with a `population` fallback, and `revealClue`). UI components and JSX event handlers must not reimplement these rules.
+
+Retired clues:
+
+* **Lowest Elevation** is no longer an active clue: it is absent from `CLUES` and from the `ClueId` union, so it can never be a starting clue, revealed, or purchased. The underlying data is deliberately retained — `Country.lowestElevationM`, the FactsBook normalization, and the generated `countries.json` values all remain, so the fact can back a future clue. Do not delete the country field when retiring a clue; only remove the clue configuration.
 
 Turn-state conventions:
 
@@ -1163,7 +1168,7 @@ Random selection points (country choice, starting clue) accept an injectable `ra
 
 Visual-clue conventions:
 
-* Two clues render visuals instead of text: `country-outline` (tier 3, base cost 50) and `country-flag` (tier 4, base cost 75). Each has `kind: 'outline'` or `kind: 'flag'` on its `ClueDefinition`; text clues omit `kind` (treated as `'text'`, resolved through `getClueKind` in `clueConfig.ts`). Do not add new fields that only visual clues could need; keep every text clue unchanged.
+* Two clues render visuals instead of text: `country-outline` (tier 3, base cost 50) and `country-flag` (tier 4, base cost 75). Each has `kind: 'outline'` or `kind: 'flag'` on its `ClueDefinition`; text clues omit `kind` (treated as `'text'`, resolved through `getClueKind` in `clueConfig.ts`). Do not add new fields that only visual clues could need; keep every text clue unchanged. `country-outline` is currently hidden from the panel via `CLUES_HIDDEN_IN_UI`, so only the Country Flag reaches players today; the outline rendering path is kept complete so the clue can be restored without code changes.
 * Visual clues reuse the same availability/purchase/reveal/economy mechanics as text clues. `isAvailable` returns `false` (never throws) when the asset cannot be resolved, so the clue shows "Unavailable for this country" and the game continues.
 * All visual-asset resolution is keyed on ISO 3166-1 alpha-2 codes derived at runtime from the country's `internetCountryCode` field via `isoCodeOf` (`src/data/countries/isoCode.ts`, returning `string | null`; overrides `uk → GB`, `fr → FR`). Do not add an ISO field to the canonical dataset just to serve visual assets.
 * TopoJSON-specific logic is isolated and dependency-free in `src/visual/topojson.ts` (arc decoding, ring stitching, SVG path/viewBox generation). `src/visual/outlineAtlas.ts` is the only module that imports `@rembish/iso-topojson`; flag lookup is isolated in `src/visual/flagAtlas.ts` (imports `country-flag-icons/react/3x2`). Components (`CountryOutline`, `CountryFlag`) only call these atlases; keep other TopoJSON/flag-package knowledge out of game code and UI.

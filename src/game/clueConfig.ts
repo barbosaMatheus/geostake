@@ -50,15 +50,6 @@ export const CLUES: readonly ClueDefinition<ClueValue>[] = [
     formatValue: (value) => `${formatDecimal(value)} per km²`,
   } satisfies ClueDefinition<number>,
   {
-    id: 'lowest-elevation',
-    tier: 0,
-    baseCost: 0,
-    label: 'Lowest Elevation',
-    isAvailable: (country) => country.lowestElevationM !== undefined,
-    getValue: (country) => country.lowestElevationM as number,
-    formatValue: (value) => `${formatNumber(value)} m`,
-  } satisfies ClueDefinition<number>,
-  {
     id: 'region',
     tier: 1,
     baseCost: 10,
@@ -151,15 +142,36 @@ const TIER_LABELS: Record<number, string> = {
   4: 'Very High',
 }
 
+/**
+ * Clues that stay fully configured (availability, cost, reveal, and economy
+ * rules all still apply) but are not offered in the player-facing clue panel.
+ * Removing an id from this set restores the clue in the UI without touching any
+ * other layer.
+ */
+export const CLUES_HIDDEN_IN_UI: ReadonlySet<ClueId> = new Set<ClueId>([
+  'country-outline',
+])
+
+export function isClueHiddenInUi(id: ClueId): boolean {
+  return CLUES_HIDDEN_IN_UI.has(id)
+}
+
 export function getTierLabel(tier: ClueTier): string {
   return TIER_LABELS[tier] ?? `Tier ${tier}`
+}
+
+export function findClueDefinition(
+  id: ClueId,
+  clues: readonly ClueDefinition<ClueValue>[] = CLUES,
+): ClueDefinition<ClueValue> | undefined {
+  return clues.find((clue) => clue.id === id)
 }
 
 export function getClueDefinition(
   id: ClueId,
   clues: readonly ClueDefinition<ClueValue>[] = CLUES,
 ): ClueDefinition<ClueValue> {
-  const definition = clues.find((clue) => clue.id === id)
+  const definition = findClueDefinition(id, clues)
   if (definition === undefined) {
     throw new Error(`No clue definition exists for "${id}"`)
   }

@@ -8,7 +8,6 @@ export type ClueId =
   | 'coastline'
   | 'region'
   | 'hemisphere'
-  | 'lowest-elevation'
   | 'highest-elevation'
   | 'capital'
   | 'national-colors'

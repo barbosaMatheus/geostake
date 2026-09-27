@@ -64,6 +64,15 @@ describe('CluePanel', () => {
     ).toBeInTheDocument()
   })
 
+  it('never offers the retired lowest elevation clue, even when the country data has it', () => {
+    renderPanel({ country: { ...brazil, lowestElevationM: -8 } })
+
+    expect(screen.queryByText('Lowest Elevation')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /Lowest Elevation/ }),
+    ).not.toBeInTheDocument()
+  })
+
   it('shows the configured current cost on each purchasable clue', () => {
     renderPanel({ country: japan, geodes: 1000 })
 
@@ -91,7 +100,7 @@ describe('CluePanel', () => {
   it('marks clues whose optional data is missing as unavailable', () => {
     renderPanel()
 
-    expect(screen.getAllByText('Unavailable for this country')).toHaveLength(5)
+    expect(screen.getAllByText('Unavailable for this country')).toHaveLength(4)
   })
 
   it('disables and flags clues that cost more geodes than the player has', () => {
@@ -134,13 +143,29 @@ describe('CluePanel', () => {
 })
 
 describe('CluePanel visual clues', () => {
-  it('offers the country outline at the tier 3 cost', () => {
+  it('never offers the country outline to the player', () => {
     renderPanel({ country: japan })
 
-    const button = screen.getByRole('button', {
-      name: 'Country Outline · 250 geodes',
+    expect(
+      screen.queryByRole('button', { name: 'Country Outline · 250 geodes' }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText('Country Outline')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('img', { name: 'Country outline clue' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('never renders the country outline even when it is marked as revealed', () => {
+    renderPanel({
+      country: japan,
+      revealedClueIds: ['population', 'country-outline'],
     })
-    expect(button).toBeEnabled()
+
+    expect(screen.queryByText('Country Outline')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('img', { name: 'Country outline clue' }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByText('Population')).toBeInTheDocument()
   })
 
   it('offers the country flag at the tier 4 cost', () => {
@@ -152,15 +177,6 @@ describe('CluePanel visual clues', () => {
     expect(button).toBeEnabled()
   })
 
-  it('reveals a purchased country outline with a generic accessible label', () => {
-    renderPanel({ country: japan, revealedClueIds: ['country-outline'] })
-
-    const image = screen.getByRole('img', { name: 'Country outline clue' })
-    expect(image).toBeInTheDocument()
-    expect(screen.getByText('Country Outline')).toBeInTheDocument()
-    expect(screen.queryByText('Japan')).not.toBeInTheDocument()
-  })
-
   it('reveals a purchased country flag with a generic accessible label', () => {
     renderPanel({ country: japan, revealedClueIds: ['country-flag'] })
 
@@ -170,19 +186,16 @@ describe('CluePanel visual clues', () => {
     expect(screen.queryByText('Japan')).not.toBeInTheDocument()
   })
 
-  it('marks visual clues unavailable when the country has no resolvable asset', () => {
+  it('marks the country flag unavailable when the country has no resolvable asset', () => {
     renderPanel({ country: brazil })
 
-    expect(screen.getAllByText('Unavailable for this country')).toHaveLength(5)
+    expect(screen.getAllByText('Unavailable for this country')).toHaveLength(4)
     expect(
       screen.queryByRole('button', { name: 'Country Flag · 375 geodes' }),
     ).not.toBeInTheDocument()
-    expect(
-      screen.queryByRole('button', { name: 'Country Outline · 250 geodes' }),
-    ).not.toBeInTheDocument()
   })
 
-  it('reveals visual clues with a purchase control click', () => {
+  it('reveals the country flag with a purchase control click', () => {
     const { onReveal } = renderPanel({ country: japan })
 
     fireEvent.click(

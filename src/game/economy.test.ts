@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ClueDefinition, ClueValue } from '../types/clue'
 import type { PlayerState } from '../types/player'
-import { CLUES } from './clueConfig'
+import { getClueDefinition } from './clueConfig'
 import {
   applyGeodeReward,
   calculateGuessReward,
@@ -110,9 +110,9 @@ describe('calculateGuessReward', () => {
 
   it('weights future tiers automatically by their tier number', () => {
     const tierFiveClues: readonly ClueDefinition<ClueValue>[] = [
-      CLUES[0],
+      getClueDefinition('population'),
       {
-        ...CLUES[10],
+        ...getClueDefinition('internet-country-code'),
         tier: 5,
         baseCost: 0,
       },

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { TEST_COUNTRIES } from '../tests/fixtures'
-import { CLUES } from './clueConfig'
+import type { ClueId } from '../types/clue'
+import type { Country } from '../types/country'
+import { CLUES, getClueDefinition } from './clueConfig'
 import { GAME_CONFIG } from './config'
 import {
   canAffordClue,
@@ -19,6 +21,16 @@ const [brazil, japan] = TEST_COUNTRIES
 
 const alwaysFirst = () => 0
 const alwaysLast = () => 0.9999
+
+const RETIRED_CLUE_ID = 'lowest-elevation'
+
+/** Brazil, but with the retired lowest-elevation fact still present. */
+const countryWithLowestElevation: Country = {
+  ...brazil,
+  id: 'mv',
+  name: 'Maldives',
+  lowestElevationM: -2,
+}
 
 function firstState(): GameState {
   return createInitialGameState(TEST_COUNTRIES, GAME_CONFIG, alwaysFirst)
@@ -41,9 +53,11 @@ describe('selectStartingClue', () => {
     expect(definition?.tier).toBe(0)
   })
 
-  it('does not pick the unavailable lowest-elevation clue for a country without one', () => {
+  it('never selects the retired lowest-elevation clue, even when the data exists', () => {
     for (const random of [alwaysFirst, alwaysLast]) {
-      expect(selectStartingClue(japan, random)).not.toBe('lowest-elevation')
+      expect(selectStartingClue(countryWithLowestElevation, random)).not.toBe(
+        RETIRED_CLUE_ID,
+      )
     }
   })
 
@@ -78,7 +92,6 @@ describe('getAvailableClues', () => {
     const availableIds = getAvailableClues(brazil).map((clue) => clue.id)
 
     expect(availableIds).not.toContain('coastline')
-    expect(availableIds).not.toContain('lowest-elevation')
     expect(availableIds).not.toContain('highest-elevation')
     expect(availableIds).not.toContain('internet-country-code')
     expect(availableIds).toContain('population')
@@ -92,7 +105,16 @@ describe('getAvailableClues', () => {
     expect(availableIds).toContain('coastline')
     expect(availableIds).toContain('highest-elevation')
     expect(availableIds).toContain('internet-country-code')
-    expect(availableIds).not.toContain('lowest-elevation')
+  })
+
+  it('never offers the retired lowest-elevation clue, even when the data exists', () => {
+    const availableIds = getAvailableClues(countryWithLowestElevation).map(
+      (clue) => clue.id,
+    )
+
+    expect(availableIds).not.toContain(RETIRED_CLUE_ID)
+    expect(availableIds).toContain('population')
+    expect(availableIds).toContain('region')
   })
 
   it('offers the visual clues when the country has a resolvable ISO code', () => {
@@ -113,9 +135,8 @@ describe('getAvailableClues', () => {
 describe('isClueAvailable', () => {
   it('reports optional data clues unavailable when the data is missing', () => {
     expect(isClueAvailable('coastline', brazil)).toBe(false)
-    expect(isClueAvailable('lowest-elevation', brazil)).toBe(false)
     expect(isClueAvailable('internet-country-code', brazil)).toBe(false)
-    expect(isClueAvailable('lowest-elevation', japan)).toBe(false)
+    expect(isClueAvailable('highest-elevation', brazil)).toBe(false)
   })
 
   it('reports optional data clues available when the data is present', () => {
@@ -160,7 +181,29 @@ describe('getTurnClues', () => {
 
     expect(ids).not.toContain('land-area')
     expect(ids).not.toContain('population-density')
-    expect(ids).not.toContain('lowest-elevation')
+  })
+})
+
+describe('the retired lowest-elevation clue', () => {
+  it('has no configured definition, so it cannot be resolved at all', () => {
+    expect(() => getClueDefinition(RETIRED_CLUE_ID as ClueId)).toThrow(
+      /no clue definition exists/i,
+    )
+  })
+
+  it('is neither revealed nor purchasable through revealClue', () => {
+    const state = createInitialGameState(
+      [countryWithLowestElevation],
+      GAME_CONFIG,
+      alwaysFirst,
+    )
+
+    const next = revealClue(state, RETIRED_CLUE_ID as ClueId)
+
+    expect(next).toBe(state)
+    expect(next.revealedClueIds).not.toContain(RETIRED_CLUE_ID)
+    expect(next.purchasedClueIds).not.toContain(RETIRED_CLUE_ID)
+    expect(next.player.geodes).toBe(state.player.geodes)
   })
 })
 
@@ -253,10 +296,10 @@ describe('revealClue', () => {
 
   it('does not change game state for an unavailable clue', () => {
     const state = firstState()
-    const next = revealClue(state, 'lowest-elevation')
+    const next = revealClue(state, 'coastline')
 
     expect(next).toBe(state)
-    expect(next.revealedClueIds).not.toContain('lowest-elevation')
+    expect(next.revealedClueIds).not.toContain('coastline')
     expect(next.player.geodes).toBe(state.player.geodes)
   })
 

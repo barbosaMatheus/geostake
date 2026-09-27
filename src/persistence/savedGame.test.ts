@@ -164,6 +164,21 @@ describe('isSavedGameState validation', () => {
     expect(isSavedGameState(state)).toBe(false)
   })
 
+  it('rejects a save that still references the retired lowest-elevation clue', () => {
+    const revealed = mutate(makeSavedState())
+    ;(revealed.revealedClueIds as string[]).push('lowest-elevation')
+    expect(isSavedGameState(revealed)).toBe(false)
+
+    const purchased = mutate(makeSavedState())
+    ;(purchased.revealedClueIds as string[]).push('lowest-elevation')
+    ;(purchased.purchasedClueIds as string[]).push('lowest-elevation')
+    expect(isSavedGameState(purchased)).toBe(false)
+
+    const starting = mutate(makeSavedState())
+    starting.startingClueId = 'lowest-elevation'
+    expect(isSavedGameState(starting)).toBe(false)
+  })
+
   it('rejects a purchased clue that was never revealed', () => {
     const state = mutate(makeSavedState())
     ;(state.purchasedClueIds as string[]).push('capital')

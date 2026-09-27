@@ -456,4 +456,18 @@ describe('canonical country dataset', () => {
       expect(ids.has(id)).toBe(true)
     }
   })
+
+  it('still carries the lowest elevation fact for countries that have one', () => {
+    const withElevation = canonicalCountries.filter(
+      (record) => record.lowestElevationM !== undefined,
+    )
+
+    expect(withElevation.length).toBeGreaterThan(100)
+    for (const record of withElevation) {
+      expect(typeof record.lowestElevationM).toBe('number')
+      expect(Number.isFinite(record.lowestElevationM)).toBe(true)
+    }
+    const brazil = canonicalCountries.find((record) => record.id === 'br')
+    expect(brazil?.lowestElevationM).toBe(0)
+  })
 })

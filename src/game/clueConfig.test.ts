@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 import type { ClueId } from '../types/clue'
 import {
   CLUES,
+  CLUES_HIDDEN_IN_UI,
   CLUE_COST_MULTIPLIER,
   getClueKind,
   getClueTiers,
+  isClueHiddenInUi,
 } from './clueConfig'
 import { getClueCost } from './clues'
 
@@ -12,7 +14,6 @@ const expectedTiers: Record<ClueId, number> = {
   population: 0,
   'land-area': 0,
   'population-density': 0,
-  'lowest-elevation': 0,
   region: 1,
   hemisphere: 1,
   coastline: 2,
@@ -28,7 +29,6 @@ const expectedBaseCosts: Record<ClueId, number> = {
   population: 0,
   'land-area': 0,
   'population-density': 0,
-  'lowest-elevation': 0,
   region: 10,
   hemisphere: 10,
   coastline: 20,
@@ -44,7 +44,6 @@ const expectedKinds: Record<ClueId, 'text' | 'flag' | 'outline'> = {
   population: 'text',
   'land-area': 'text',
   'population-density': 'text',
-  'lowest-elevation': 'text',
   region: 'text',
   hemisphere: 'text',
   coastline: 'text',
@@ -101,6 +100,49 @@ describe('CLUES', () => {
 
   it('exposes the five expected tiers in ascending order', () => {
     expect(getClueTiers(CLUES)).toEqual([0, 1, 2, 3, 4])
+  })
+})
+
+describe('retired clues', () => {
+  it('no longer configures the lowest elevation clue', () => {
+    const ids = CLUES.map((clue) => clue.id)
+
+    expect(ids).not.toContain('lowest-elevation')
+    expect(CLUES.some((clue) => clue.label === 'Lowest Elevation')).toBe(false)
+  })
+
+  it('keeps every other tier populated', () => {
+    for (const tier of getClueTiers(CLUES)) {
+      expect(CLUES.filter((clue) => clue.tier === tier).length).toBeGreaterThan(
+        0,
+      )
+    }
+  })
+})
+
+describe('CLUES_HIDDEN_IN_UI', () => {
+  it('hides only the country outline from the player-facing panel', () => {
+    expect(Array.from(CLUES_HIDDEN_IN_UI)).toEqual(['country-outline'])
+    expect(isClueHiddenInUi('country-outline')).toBe(true)
+  })
+
+  it('keeps every other clue visible in the player-facing panel', () => {
+    const visible = CLUES.filter((clue) => !isClueHiddenInUi(clue.id))
+
+    expect(visible.map((clue) => clue.id)).toContain('country-flag')
+    expect(visible.map((clue) => clue.id)).toContain('capital')
+    expect(visible.map((clue) => clue.id)).toContain('population')
+    expect(visible.map((clue) => clue.id)).toHaveLength(CLUES.length - 1)
+  })
+
+  it('leaves the hidden outline clue fully configured and purchasable', () => {
+    const outline = CLUES.find((clue) => clue.id === 'country-outline')
+
+    expect(outline).toBeDefined()
+    expect(outline?.tier).toBe(3)
+    expect(outline?.baseCost).toBe(50)
+    expect(getClueKind('country-outline')).toBe('outline')
+    expect(getClueCost('country-outline')).toBe(250)
   })
 })
 

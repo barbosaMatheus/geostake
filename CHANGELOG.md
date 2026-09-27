@@ -4,6 +4,27 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.14.0] - 2026-09-27
+
+### Removed
+
+- The **Lowest Elevation** clue is no longer offered to players. It is gone
+  from `CLUES` and from the `ClueId` union, so it can no longer be selected as
+  a starting clue, revealed, or purchased. The underlying country data
+  (`lowestElevationM`), its FactsBook normalization, and the generated
+  `countries.json` dataset are unchanged, so the fact is still available for a
+  future clue. A saved game that references the retired clue is rejected by
+  persistence validation and treated as no saved game.
+- The **Country Outline** clue is no longer rendered in the game UI. It is not
+  offered as a purchase, not shown as unavailable, and not displayed when it is
+  present in the revealed clue list. This is a UI-level removal only: the clue
+  definition, its tier/cost/economy rules, the TopoJSON decoding, the outline
+  atlas, the `CountryOutline` component, and the bundled outline assets are all
+  intact. Remove `country-outline` from `CLUES_HIDDEN_IN_UI`
+  (`src/game/clueConfig.ts`) to bring the clue back.
+
+[0.14.0]: https://github.com/barbosaMatheus/geostake
+
 ## [0.13.0] - 2026-09-22
 
 ### Added

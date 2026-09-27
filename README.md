@@ -35,11 +35,11 @@ not implemented yet.
 The application uses simple, strongly typed view state rather than a router.
 There are three views, each a small focused component:
 
-| View             | Description                                                                                                                     |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `LandingScreen`  | Default view. GeoStake branding, **New Game**, **Continue Game** (enabled when a save exists), **Settings**.                    |
+| View             | Description                                                                                                                                                |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LandingScreen`  | Default view. GeoStake branding, **New Game**, **Continue Game** (enabled when a save exists), **Settings**.                                               |
 | `GameScreen`     | The full gameplay screen. Status columns for geodes (with **Home**), lives (with **Buy Life**), and turn (with debug **Skip**); header **?** help overlay. |
-| `SettingsScreen` | Placeholder page with a _Back to Landing_ control.                                                                              |
+| `SettingsScreen` | Placeholder page with a _Back to Landing_ control.                                                                                                         |
 
 `App` owns a single `AppView` state (`'landing' | 'game' | 'settings'`,
 defined in `src/navigation/views.ts`) starting at `'landing'` and switches
@@ -79,13 +79,13 @@ omitted until a later turn gives them another random chance. Every other clue
 must be purchased with geodes, and clues whose data is missing for the current
 country cannot be purchased.
 
-| Tier | Name      | Clues                                                       | Base Cost |
-| ---- | --------- | ----------------------------------------------------------- | --------: |
-| 0    | Free      | Population, Land Area, Population Density, Lowest Elevation |         0 |
-| 1    | Low       | Region, Hemisphere                                          |        10 |
-| 2    | Medium    | Coastline, Highest Elevation                                |        20 |
-| 3    | High      | Capital, National Colors, Country Outline                   |        50 |
-| 4    | Very High | Internet Country Code, Country Flag                         |        75 |
+| Tier | Name      | Clues                                     | Base Cost |
+| ---- | --------- | ----------------------------------------- | --------: |
+| 0    | Free      | Population, Land Area, Population Density |         0 |
+| 1    | Low       | Region, Hemisphere                        |        10 |
+| 2    | Medium    | Coastline, Highest Elevation              |        20 |
+| 3    | High      | Capital, National Colors                  |        50 |
+| 4    | Very High | Internet Country Code, Country Flag       |        75 |
 
 The current cost of a clue is its base cost times the centralized
 `CLUE_COST_MULTIPLIER` (default `5`, the normal-difficulty multiplier), so the
@@ -95,12 +95,15 @@ modes change only that value. Clue tiers and definitions are data-driven, so
 additional tiers (5, 6, ...) and clues can be added without restructuring the
 system. Clue rules live in pure, unit-tested functions in `src/game/clues.ts`.
 
-Two clues are **visual** instead of text: the Country Outline (tier 3) draws
-the mystery country's silhouette and the Country Flag (tier 4) shows its flag.
-When revealed, both render the asset directly in the clue panel with a generic
-accessible label ("Country outline clue" / "Country flag clue") so the
-country's name is never disclosed before the player guesses it. See
-[Visual Clue Assets](#visual-clue-assets) below.
+The **Country Flag** clue (tier 4) is **visual** instead of text: it shows the
+mystery country's flag directly in the clue panel with a generic accessible
+label ("Country flag clue") so the country's name is never disclosed before the
+player guesses it. The **Country Outline** clue (tier 3) is still fully
+configured — same availability, cost, reveal, and economy rules, and the same
+bundled assets — but is currently hidden from the player-facing panel through
+`CLUES_HIDDEN_IN_UI` in `src/game/clueConfig.ts`. Remove `country-outline` from
+that set to offer it again. See [Visual Clue Assets](#visual-clue-assets)
+below.
 
 ## Visual Clue Assets
 
