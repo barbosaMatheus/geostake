@@ -45,7 +45,7 @@ function HelpOverlay({ open, onClose }: HelpOverlayProps) {
         </h2>
         <ul className="help-list">
           <li>Identify the mystery country by guessing its name.</li>
-          <li>Each turn begins with one free clue.</li>
+          <li>Each turn begins with two free clues.</li>
           <li>Buy additional clues with geodes.</li>
           <li>You start with 1000 geodes.</li>
           <li>You start with 3 lives.</li>

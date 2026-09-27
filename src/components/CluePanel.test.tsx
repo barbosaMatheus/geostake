@@ -9,7 +9,7 @@ const [brazil, japan] = TEST_COUNTRIES
 function renderPanel(options?: {
   country?: typeof brazil
   geodes?: number
-  startingClueId?: ClueId
+  startingClueIds?: readonly ClueId[]
   revealedClueIds?: readonly ClueId[]
   disabled?: boolean
 }) {
@@ -18,7 +18,7 @@ function renderPanel(options?: {
     <CluePanel
       country={options?.country ?? brazil}
       geodes={options?.geodes ?? 1000}
-      startingClueId={options?.startingClueId ?? 'population'}
+      startingClueIds={options?.startingClueIds ?? ['population']}
       revealedClueIds={options?.revealedClueIds ?? ['population']}
       disabled={options?.disabled}
       onReveal={onReveal}
@@ -54,7 +54,7 @@ describe('CluePanel', () => {
     ).toBeInTheDocument()
   })
 
-  it('omits the free-tier clues other than the starting clue', () => {
+  it('omits the free-tier clues that did not start the turn', () => {
     renderPanel()
 
     expect(screen.queryByText('Land Area')).not.toBeInTheDocument()
@@ -65,10 +65,25 @@ describe('CluePanel', () => {
     ).toBeInTheDocument()
   })
 
+  it('shows both free starting clues and badges each of them', () => {
+    renderPanel({
+      startingClueIds: ['population', 'hemisphere'],
+      revealedClueIds: ['population', 'hemisphere'],
+    })
+
+    expect(screen.getAllByText('Starting clue')).toHaveLength(2)
+    expect(screen.getByText('Population')).toBeInTheDocument()
+    expect(screen.getByText('221,359,387')).toBeInTheDocument()
+    expect(screen.getByText('Hemisphere')).toBeInTheDocument()
+    expect(screen.queryByText('Land Area')).not.toBeInTheDocument()
+    expect(screen.queryByText('Population Density')).not.toBeInTheDocument()
+    expect(screen.queryAllByRole('button', { name: /· Free/ })).toHaveLength(0)
+  })
+
   it('offers the free-tier coastline clue only when it starts the turn', () => {
     renderPanel({
       country: japan,
-      startingClueId: 'coastline',
+      startingClueIds: ['coastline'],
       revealedClueIds: ['coastline'],
     })
 

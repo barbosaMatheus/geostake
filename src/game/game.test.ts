@@ -3,7 +3,8 @@ import { TEST_COUNTRIES } from '../tests/fixtures'
 import type { GameState } from '../types/game'
 import { GAME_CONFIG } from './config'
 import { ECONOMY_CONFIG } from './economyConfig'
-import { revealClue } from './clues'
+import { CLUES } from './clueConfig'
+import { revealClue, STARTING_CLUE_COUNT } from './clues'
 import {
   applyGuess,
   createInitialGameState,
@@ -101,15 +102,44 @@ describe('createInitialGameState', () => {
     expect(() => createInitialGameState([])).toThrow()
   })
 
-  it('reveals exactly one tier zero starting clue on the first turn', () => {
+  it('reveals exactly two distinct tier zero clues on the first turn', () => {
     const state = createInitialGameState(
       TEST_COUNTRIES,
       GAME_CONFIG,
       alwaysSelectFirst,
     )
 
-    expect(state.revealedClueIds).toHaveLength(1)
-    expect(state.revealedClueIds[0]).toBe(state.startingClueId)
+    expect(state.startingClueIds).toHaveLength(STARTING_CLUE_COUNT)
+    expect(new Set(state.startingClueIds).size).toBe(STARTING_CLUE_COUNT)
+    expect(state.revealedClueIds).toEqual([...state.startingClueIds])
+    for (const id of state.startingClueIds) {
+      expect(CLUES.find((clue) => clue.id === id)?.tier).toBe(0)
+    }
+  })
+
+  it('reveals the free clues without charging geodes or counting them as purchased', () => {
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+
+    expect(state.player.geodes).toBe(ECONOMY_CONFIG.startingGeodes)
+    expect(state.purchasedClueIds).toEqual([])
+  })
+
+  it('does not reduce the reward for the two free clues', () => {
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    const next = applyGuess(state, TEST_COUNTRIES[0].name)
+
+    expect(next.guessResult?.outcome).toBe('correct')
+    if (next.guessResult?.outcome === 'correct') {
+      expect(next.guessResult.geodesAwarded).toBe(ECONOMY_CONFIG.baseReward)
+    }
   })
 })
 
@@ -284,8 +314,8 @@ describe('startNextTurn', () => {
     const resolved = applyGuess(withPurchasedClue, TEST_COUNTRIES[0].name)
     const next = startNextTurn(resolved, TEST_COUNTRIES, alwaysSelectFirst)
 
-    expect(next.revealedClueIds).toHaveLength(1)
-    expect(next.revealedClueIds[0]).toBe(next.startingClueId)
+    expect(next.revealedClueIds).toHaveLength(STARTING_CLUE_COUNT)
+    expect(next.revealedClueIds).toEqual([...next.startingClueIds])
     expect(next.revealedClueIds).not.toContain('region')
     expect(next.purchasedClueIds).toEqual([])
     expect(next.player.geodes).toBe(resolved.player.geodes)
@@ -353,8 +383,8 @@ describe('skipTurn', () => {
     const resolved = applyGuess(withClues, 'Atlantis')
     const next = skipTurn(resolved, TEST_COUNTRIES, alwaysSelectFirst)
 
-    expect(next.revealedClueIds).toHaveLength(1)
-    expect(next.revealedClueIds[0]).toBe(next.startingClueId)
+    expect(next.revealedClueIds).toHaveLength(STARTING_CLUE_COUNT)
+    expect(next.revealedClueIds).toEqual([...next.startingClueIds])
     expect(next.purchasedClueIds).toEqual([])
     expect(next.guessResult).toBeNull()
   })
@@ -399,7 +429,7 @@ describe('resolveGuess', () => {
 
     expect(next.guessResult?.outcome).toBe('correct')
     expect(next.turn).toBe(1)
-    expect(next.startingClueId).toBe(state.startingClueId)
+    expect(next.startingClueIds).toEqual(state.startingClueIds)
     expect(next.revealedClueIds).toEqual(state.revealedClueIds)
     expect(next.player.geodes).toBe(
       ECONOMY_CONFIG.startingGeodes + ECONOMY_CONFIG.baseReward,
@@ -449,7 +479,8 @@ describe('resolveGuess', () => {
 
     expect(next.turn).toBe(2)
     expect(next.guessResult).toBeNull()
-    expect(next.revealedClueIds).toHaveLength(1)
+    expect(next.revealedClueIds).toHaveLength(STARTING_CLUE_COUNT)
+    expect(next.revealedClueIds).toEqual([...next.startingClueIds])
     expect(next.player.geodes).toBe(
       ECONOMY_CONFIG.startingGeodes + ECONOMY_CONFIG.baseReward,
     )
@@ -495,7 +526,7 @@ describe('resolveGuess', () => {
 
     expect(next.guessResult?.outcome).toBe('correct')
     expect(next.turn).toBe(1)
-    expect(next.startingClueId).toBe(state.startingClueId)
+    expect(next.startingClueIds).toEqual(state.startingClueIds)
   })
 
   it('keeps the turn open on an incorrect guess', () => {

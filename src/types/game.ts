@@ -8,7 +8,7 @@ export interface GameState {
   mysteryCountry: Country
   turn: number
   guessResult: GuessResult | null
-  startingClueId: ClueId
+  startingClueIds: readonly ClueId[]
   revealedClueIds: readonly ClueId[]
   purchasedClueIds: readonly ClueId[]
 }

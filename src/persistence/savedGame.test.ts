@@ -38,7 +38,10 @@ describe('serializeGameState', () => {
     expect(saved.mysteryCountryId).toBe('br')
     expect(saved.player).toEqual({ geodes: 1000, lives: 3 })
     expect(saved.turn).toBe(1)
-    expect(saved.revealedClueIds).toContain(saved.startingClueId)
+    expect(saved.startingClueIds).toHaveLength(2)
+    for (const id of saved.startingClueIds) {
+      expect(saved.revealedClueIds).toContain(id)
+    }
     expect(saved.purchasedClueIds).toEqual([])
     expect(saved.guessResult).toBeNull()
     expect(isSavedGameState(saved)).toBe(true)
@@ -175,7 +178,7 @@ describe('isSavedGameState validation', () => {
     expect(isSavedGameState(purchased)).toBe(false)
 
     const starting = mutate(makeSavedState())
-    starting.startingClueId = 'lowest-elevation'
+    starting.startingClueIds = ['lowest-elevation']
     expect(isSavedGameState(starting)).toBe(false)
   })
 
@@ -189,8 +192,31 @@ describe('isSavedGameState validation', () => {
 
   it('rejects a starting clue that is not revealed', () => {
     const state = mutate(makeSavedState())
-    state.startingClueId = 'capital'
+    state.startingClueIds = ['population', 'capital']
     state.revealedClueIds = ['population']
+
+    expect(isSavedGameState(state)).toBe(false)
+  })
+
+  it('rejects a save that repeats the same starting clue', () => {
+    const state = mutate(makeSavedState())
+    state.startingClueIds = ['population', 'population']
+
+    expect(isSavedGameState(state)).toBe(false)
+  })
+
+  it('rejects a save without any starting clue', () => {
+    const state = mutate(makeSavedState())
+    state.startingClueIds = []
+
+    expect(isSavedGameState(state)).toBe(false)
+  })
+
+  it('rejects a save written by the previous single-starting-clue version', () => {
+    const state = mutate(makeSavedState())
+    state.version = SAVED_GAME_VERSION - 1
+    delete (state as Record<string, unknown>).startingClueIds
+    state.startingClueId = 'population'
 
     expect(isSavedGameState(state)).toBe(false)
   })

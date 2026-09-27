@@ -4,6 +4,21 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.16.0] - 2026-09-27
+
+### Changed
+
+- Every turn now begins with **two** randomly selected Free-tier clues revealed
+  automatically instead of one. Both are revealed for free, neither is recorded
+  as a purchased clue, and neither reduces the reward for solving the turn, so
+  a turn solved without buying anything still awards the full reward. A new
+  random pair is drawn for each new turn, and the same clue is never selected
+  twice for the same turn. If a country has fewer than two available Free-tier
+  clues, every available one is revealed. Purchased-clue behavior is unchanged.
+- The saved-game format moved to version 2: `startingClueId` became
+  `startingClueIds`. Saves written by the previous version are rejected and read
+  as "no saved game" rather than migrated.
+
 ## [0.15.0] - 2026-09-27
 
 ### Changed
@@ -26,6 +41,7 @@ This project follows [Semantic Versioning](https://semver.org/).
   National Colors (now tier 2) was purchased. The economy formula and all
   economy configuration values are unchanged.
 
+[0.16.0]: https://github.com/barbosaMatheus/geostake
 [0.15.0]: https://github.com/barbosaMatheus/geostake
 
 ## [0.14.0] - 2026-09-27

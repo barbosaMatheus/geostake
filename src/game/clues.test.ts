@@ -7,12 +7,14 @@ import { GAME_CONFIG } from './config'
 import {
   canAffordClue,
   formatClueValue,
+  getClueCost,
   getAvailableClues,
   getClueValue,
   getTurnClues,
   isClueAvailable,
   revealClue,
-  selectStartingClue,
+  selectStartingClues,
+  STARTING_CLUE_COUNT,
 } from './clues'
 import { applyGuess, createInitialGameState, startNextTurn } from './game'
 import type { GameState } from '../types/game'
@@ -23,6 +25,21 @@ const alwaysFirst = () => 0
 const alwaysLast = () => 0.9999
 
 const RETIRED_CLUE_ID = 'lowest-elevation'
+
+/** Cycles through fixed values so every pick in a selection is predictable. */
+function cyclingRandom(values: readonly number[]): () => number {
+  let index = 0
+  return () => values[index++ % values.length]
+}
+
+/** A deterministic pseudo-random generator, used to stress the selection. */
+function seededRandom(seed: number): () => number {
+  let state = seed
+  return () => {
+    state = (state * 1103515245 + 12345) % 2147483648
+    return state / 2147483648
+  }
+}
 
 /** Brazil, but with the retired lowest-elevation fact still present. */
 const countryWithLowestElevation: Country = {
@@ -44,46 +61,96 @@ function nextTurnState(
   return startNextTurn(resolved, TEST_COUNTRIES, random)
 }
 
-describe('selectStartingClue', () => {
-  it('returns exactly one tier zero clue', () => {
-    const clue = selectStartingClue(brazil, alwaysFirst)
+describe('selectStartingClues', () => {
+  it('returns exactly two free clues at a normal turn start', () => {
+    for (const country of [brazil, japan]) {
+      for (let seed = 1; seed <= 25; seed += 1) {
+        expect(selectStartingClues(country, seededRandom(seed))).toHaveLength(
+          STARTING_CLUE_COUNT,
+        )
+      }
+    }
+  })
 
-    expect(typeof clue).toBe('string')
-    const definition = CLUES.find((candidate) => candidate.id === clue)
-    expect(definition?.tier).toBe(0)
+  it('only selects clues from the free tier', () => {
+    for (const country of [brazil, japan]) {
+      for (let seed = 1; seed <= 25; seed += 1) {
+        for (const id of selectStartingClues(country, seededRandom(seed))) {
+          expect(CLUES.find((clue) => clue.id === id)?.tier).toBe(0)
+        }
+      }
+    }
+  })
+
+  it('only selects clues that are available for the country', () => {
+    for (let seed = 1; seed <= 25; seed += 1) {
+      for (const id of selectStartingClues(brazil, seededRandom(seed))) {
+        expect(isClueAvailable(id, brazil)).toBe(true)
+      }
+    }
+
+    expect(selectStartingClues(brazil, alwaysFirst)).not.toContain('coastline')
+  })
+
+  it('never selects the same clue twice', () => {
+    for (let seed = 1; seed <= 25; seed += 1) {
+      const selected = selectStartingClues(brazil, seededRandom(seed))
+
+      expect(new Set(selected).size).toBe(selected.length)
+    }
+  })
+
+  it('still selects two distinct clues when randomness keeps asking for the first', () => {
+    const selected = selectStartingClues(brazil, cyclingRandom([0, 0, 0, 0]))
+
+    expect(selected).toHaveLength(2)
+    expect(new Set(selected).size).toBe(2)
+  })
+
+  it('takes the clues from across the pool as randomness varies', () => {
+    expect(selectStartingClues(brazil, alwaysFirst)).toEqual([
+      'population',
+      'land-area',
+    ])
+    expect(selectStartingClues(japan, alwaysFirst)).toEqual([
+      'population',
+      'land-area',
+    ])
+    expect(selectStartingClues(japan, alwaysLast)).toEqual([
+      'hemisphere',
+      'coastline',
+    ])
   })
 
   it('never selects the retired lowest-elevation clue, even when the data exists', () => {
     for (const random of [alwaysFirst, alwaysLast]) {
-      expect(selectStartingClue(countryWithLowestElevation, random)).not.toBe(
-        RETIRED_CLUE_ID,
-      )
+      expect(
+        selectStartingClues(countryWithLowestElevation, random),
+      ).not.toContain(RETIRED_CLUE_ID)
     }
   })
 
-  it('randomizes across the available clues when several are available', () => {
-    const withFirst = selectStartingClue(japan, alwaysFirst)
-    const withLast = selectStartingClue(japan, alwaysLast)
-
-    expect(withFirst).toBe('population')
-    expect(withLast).toBe('hemisphere')
-    expect(withFirst).not.toBe(withLast)
-  })
-
-  it('can select the free-tier hemisphere clue as the starting clue', () => {
-    const hemisphereOnly = CLUES.filter((clue) => clue.id === 'hemisphere')
-
-    expect(selectStartingClue(brazil, alwaysLast, hemisphereOnly)).toBe(
-      'hemisphere',
+  it('reveals both free clues when the pool holds exactly two', () => {
+    const twoClues = CLUES.filter(
+      (clue) => clue.id === 'population' || clue.id === 'hemisphere',
     )
+
+    expect(selectStartingClues(brazil, alwaysFirst, twoClues)).toEqual([
+      'population',
+      'hemisphere',
+    ])
   })
 
-  it('returns the sole tier zero clue when the clue list is narrowed', () => {
+  it('reveals a single free clue when the pool is smaller than two', () => {
+    const hemisphereOnly = CLUES.filter((clue) => clue.id === 'hemisphere')
     const landAreaOnly = CLUES.filter((clue) => clue.id === 'land-area')
 
-    expect(selectStartingClue(brazil, alwaysFirst, landAreaOnly)).toBe(
+    expect(selectStartingClues(brazil, alwaysLast, hemisphereOnly)).toEqual([
+      'hemisphere',
+    ])
+    expect(selectStartingClues(brazil, alwaysFirst, landAreaOnly)).toEqual([
       'land-area',
-    )
+    ])
   })
 
   it('falls back to population when no tier zero clue is available', () => {
@@ -91,9 +158,9 @@ describe('selectStartingClue', () => {
       (clue) => clue.id === 'highest-elevation',
     )
 
-    expect(selectStartingClue(brazil, alwaysLast, highestElevationOnly)).toBe(
-      'population',
-    )
+    expect(
+      selectStartingClues(brazil, alwaysLast, highestElevationOnly),
+    ).toEqual(['population'])
   })
 })
 
@@ -177,10 +244,13 @@ describe('isClueAvailable', () => {
 })
 
 describe('getTurnClues', () => {
-  it('includes the starting clue and every non-free clue', () => {
-    const ids = getTurnClues('population', CLUES).map((clue) => clue.id)
+  it('includes the free starting clues and every non-free clue', () => {
+    const ids = getTurnClues(['population', 'hemisphere'], CLUES).map(
+      (clue) => clue.id,
+    )
 
     expect(ids).toContain('population')
+    expect(ids).toContain('hemisphere')
     expect(ids).toContain('region')
     expect(ids).toContain('highest-elevation')
     expect(ids).toContain('national-colors')
@@ -188,20 +258,22 @@ describe('getTurnClues', () => {
     expect(ids).toContain('internet-country-code')
   })
 
-  it('omits free-tier clues other than the starting clue', () => {
-    const ids = getTurnClues('population', CLUES).map((clue) => clue.id)
+  it('omits free-tier clues that did not start the turn', () => {
+    const ids = getTurnClues(['population', 'hemisphere'], CLUES).map(
+      (clue) => clue.id,
+    )
 
     expect(ids).not.toContain('land-area')
     expect(ids).not.toContain('population-density')
-    expect(ids).not.toContain('hemisphere')
     expect(ids).not.toContain('coastline')
   })
 
-  it('offers the free-tier hemisphere clue when it is the starting clue', () => {
-    const ids = getTurnClues('hemisphere', CLUES).map((clue) => clue.id)
+  it('offers only one free-tier clue when a single free clue was revealed', () => {
+    const ids = getTurnClues(['population'], CLUES).map((clue) => clue.id)
 
-    expect(ids).toContain('hemisphere')
-    expect(ids).not.toContain('population')
+    expect(ids).toContain('population')
+    expect(ids).not.toContain('land-area')
+    expect(ids).not.toContain('hemisphere')
   })
 })
 
@@ -324,12 +396,12 @@ describe('revealClue', () => {
     expect(next.player.geodes).toBe(state.player.geodes)
   })
 
-  it('does not reveal a free-tier clue that is not the starting clue', () => {
+  it('does not reveal a free-tier clue that did not start the turn', () => {
     const state = firstState()
-    const next = revealClue(state, 'land-area')
+    const next = revealClue(state, 'population-density')
 
     expect(next).toBe(state)
-    expect(next.revealedClueIds).not.toContain('land-area')
+    expect(next.revealedClueIds).not.toContain('population-density')
   })
 
   it('does not purchase the free-tier hemisphere clue when it does not start the turn', () => {
@@ -352,13 +424,15 @@ describe('revealClue', () => {
     expect(next.player.geodes).toBe(japanState.player.geodes)
   })
 
-  it('keeps the starting clue revealed alongside purchased clues', () => {
+  it('keeps the free starting clues revealed alongside purchased clues', () => {
     const state = firstState()
     const next = revealClue(state, 'region')
 
-    expect(next.revealedClueIds).toContain(state.startingClueId)
+    for (const id of state.startingClueIds) {
+      expect(next.revealedClueIds).toContain(id)
+      expect(next.purchasedClueIds).not.toContain(id)
+    }
     expect(next.purchasedClueIds).toEqual(['region'])
-    expect(next.purchasedClueIds).not.toContain(state.startingClueId)
   })
 
   it('does not reveal clues after the turn has been resolved', () => {
@@ -372,16 +446,33 @@ describe('revealClue', () => {
 })
 
 describe('clue state across turns', () => {
-  it('starts a game with exactly one revealed starting clue', () => {
+  it('starts a game with exactly two distinct free starting clues', () => {
     const state = firstState()
 
-    expect(state.revealedClueIds).toHaveLength(1)
-    expect(state.revealedClueIds[0]).toBe(state.startingClueId)
+    expect(state.startingClueIds).toHaveLength(STARTING_CLUE_COUNT)
+    expect(new Set(state.startingClueIds).size).toBe(STARTING_CLUE_COUNT)
+    expect(state.revealedClueIds).toEqual([...state.startingClueIds])
     expect(state.purchasedClueIds).toEqual([])
-    const startingDefinition = CLUES.find(
-      (clue) => clue.id === state.startingClueId,
-    )
-    expect(startingDefinition?.tier).toBe(0)
+    for (const id of state.startingClueIds) {
+      expect(CLUES.find((clue) => clue.id === id)?.tier).toBe(0)
+    }
+  })
+
+  it('reveals the free starting clues without charging geodes', () => {
+    const state = firstState()
+
+    for (const id of state.startingClueIds) {
+      expect(getClueCost(id)).toBe(0)
+    }
+    expect(state.player.geodes).toBe(GAME_CONFIG.economy.startingGeodes)
+  })
+
+  it('does not count the free starting clues as purchased clues', () => {
+    const state = firstState()
+
+    expect(state.purchasedClueIds).toEqual([])
+    expect(state.purchasedClueIds).not.toContain(state.startingClueIds[0])
+    expect(state.purchasedClueIds).not.toContain(state.startingClueIds[1])
   })
 
   it('clears previously revealed and purchased clues when a new turn starts', () => {
@@ -391,18 +482,21 @@ describe('clue state across turns', () => {
 
     const newTurn = nextTurnState(state)
 
-    expect(newTurn.revealedClueIds).toHaveLength(1)
-    expect(newTurn.revealedClueIds[0]).toBe(newTurn.startingClueId)
+    expect(newTurn.revealedClueIds).toHaveLength(STARTING_CLUE_COUNT)
+    expect(newTurn.revealedClueIds).toEqual([...newTurn.startingClueIds])
     expect(newTurn.revealedClueIds).not.toContain('region')
     expect(newTurn.purchasedClueIds).toEqual([])
   })
 
-  it('selects a new starting clue for the new turn when randomness asks for it', () => {
+  it('selects a new pair of free clues for the new turn', () => {
     const state = revealClue(firstState(), 'region')
     const newTurn = nextTurnState(state, alwaysLast)
 
-    expect(newTurn.startingClueId).toBe('hemisphere')
-    expect(newTurn.revealedClueIds).toEqual(['hemisphere'])
+    expect(newTurn.startingClueIds).toHaveLength(STARTING_CLUE_COUNT)
+    expect(new Set(newTurn.startingClueIds).size).toBe(STARTING_CLUE_COUNT)
+    expect(newTurn.startingClueIds).toContain('hemisphere')
+    expect(newTurn.startingClueIds).not.toEqual(state.startingClueIds)
+    expect(newTurn.revealedClueIds).toEqual([...newTurn.startingClueIds])
   })
 })
 
@@ -442,14 +536,16 @@ describe('visual clues', () => {
     expect(next.purchasedClueIds).toContain('country-flag')
   })
 
-  it('tracks purchased visual clues separately from the free tier 0 clue', () => {
+  it('tracks purchased visual clues separately from the free tier 0 clues', () => {
     const state = createInitialGameState([japan], GAME_CONFIG, alwaysFirst)
     const next = revealClue(state, 'country-flag')
 
     expect(next.purchasedClueIds).toEqual(['country-flag'])
-    expect(next.purchasedClueIds).not.toContain(state.startingClueId)
-    expect(next.revealedClueIds).toContain(state.startingClueId)
     expect(next.revealedClueIds).toContain('country-flag')
+    for (const id of state.startingClueIds) {
+      expect(next.purchasedClueIds).not.toContain(id)
+      expect(next.revealedClueIds).toContain(id)
+    }
   })
 
   it('does not reveal a visual clue twice', () => {

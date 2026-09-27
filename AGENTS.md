@@ -12,7 +12,7 @@ The central gameplay tension is:
 
 > How much information are you willing to buy before making your guess?
 
-Players begin with a limited number of geodes and lives. Each mystery country provides a starting clue. Additional clues can be purchased with geodes, with more revealing clues costing more. Incorrect guesses consume lives. Correct guesses award geodes, with larger rewards for solving a country using fewer purchased clues.
+Players begin with a limited number of geodes and lives. Each mystery country provides two free starting clues. Additional clues can be purchased with geodes, with more revealing clues costing more. Incorrect guesses consume lives. Correct guesses award geodes, with larger rewards for solving a country using fewer purchased clues.
 
 The game is intended to work completely offline after the application has initially been loaded/installed. It must not depend on a backend API or an internet connection during gameplay.
 
@@ -603,7 +603,8 @@ GeoStake's active-game persistence lives in `src/persistence/`:
 Rules:
 
 * Persist the mystery country by its stable `id`, not the full `Country` object; resolve it against the canonical dataset when restoring. Treat an unknown stored id as "no saved game".
-* `isSavedGameState` must reject incompatible data: wrong `version`, non-finite/negative resources, lives beyond `maxLives`, unknown clue ids, a starting clue that is not revealed, purchased clues that are not revealed, and a correct `GuessResult` whose `countryId` does not match the mystery country.
+* `isSavedGameState` must reject incompatible data: wrong `version`, non-finite/negative resources, lives beyond `maxLives`, unknown clue ids, a starting clue that is not revealed or that repeats, an empty starting-clue list, purchased clues that are not revealed, and a correct `GuessResult` whose `countryId` does not match the mystery country.
+* `SAVED_GAME_VERSION` is `2`: version 2 replaced the single `startingClueId` with `startingClueIds` when turns began revealing two free clues. Older saves are rejected and read as "no saved game" rather than migrated; the game is pre-1.0, so no migration path is maintained.
 * `saveGame` refuses to store a game over (zero lives); it clears the saved game instead, since an ended game cannot be played further. Do not persist career statistics or settings.
 * Saving is triggered by meaningful state changes only. `usePersistentGame` (in `src/hooks`) wraps `useGame` and writes on game-state changes, skipping the initial write when resuming so a loaded save is never clobbered on mount.
 * The active game is written after: starting a new game or turn, guessing, losing a life, revealing/purchasing a clue, buying a life, and awarding a reward.
@@ -1162,9 +1163,9 @@ Retired clues:
 
 Turn-state conventions:
 
-* Each turn tracks `startingClueId`, `revealedClueIds`, and `purchasedClueIds` on `GameState` (clue identifiers only; the `Country` is the source of truth for clue values).
-* At the start of a turn exactly one available tier-0 clue is randomly selected and auto-revealed; population is the final fallback.
-* The starting clue is the only free-tier clue offered during its turn: non-starting tier-0 clues are completely omitted from the UI and cannot be revealed (`getTurnClues` in `src/game/clues.ts` drives what the panel offers, and `revealClue` rejects tier-0 reveals that are not `startingClueId`). Every new turn re-rolls the starting clue, so an omitted free clue has a fresh chance next round.
+* Each turn tracks `startingClueIds`, `revealedClueIds`, and `purchasedClueIds` on `GameState` (clue identifiers only; the `Country` is the source of truth for clue values). `startingClueIds` is always two distinct ids at a normal turn start.
+* At the start of a turn `STARTING_CLUE_COUNT` (2) distinct available tier-0 clues are randomly selected and auto-revealed for free; population is the final fallback. `selectStartingClues` removes each pick from the pool, so the same clue is never chosen twice, and a pool smaller than two is used as-is rather than failing.
+* The revealed starting clues are the only free-tier clues offered during their turn: other tier-0 clues are completely omitted from the UI and cannot be revealed (`getTurnClues` in `src/game/clues.ts` drives what the panel offers, and `revealClue` rejects tier-0 reveals that are not in `startingClueIds`). Every new turn re-rolls the pair, so an omitted free clue has a fresh chance next round.
 * A clue whose optional data is missing for the current country is never purchasable.
 * A revealed clue cannot be purchased again; revealing is a no-op when the clue is already revealed, unavailable, or unaffordable.
 * Only a correct guess resolves a turn with a reward (`guessResult` outcome `'correct'`, including `geodesAwarded`). An incorrect guess deducts a life and leaves the turn open while lives remain: the same mystery country stays active, clue purchases remain available, and the player can guess again.
@@ -1172,9 +1173,9 @@ Turn-state conventions:
 * A resolved turn (one ended by a correct guess) is closed to further clue purchases: `revealClue` is a no-op while `guessResult` is set, and the UI disables the clue panel. Clue purchasing resumes when the next turn starts.
 * Running out of lives (`lives === 0`) closes the turn with an `'incorrect'` `GuessResult`: the UI locks the guess input and clue panel and reveals the country ("Out of lives. The mystery country was [name]."). Starting a new game then requires explicit player confirmation and resets the game to a fresh start (`createInitialGameState`: starting geodes, starting lives, turn 1).
 * `GAME_CONFIG.continueOnCorrectGuess` (default `false`) controls whether a correct guess automatically starts the next turn via `resolveGuess`. The default flow does not auto-advance: a correct guess leaves the turn resolved on the feedback screen, which reports the reward and the accepted match percentage (`matchPercent` on `GuessChecker`, exposed as `guessMatchPercent` from `src/game/game.ts`), and the next turn starts only when the player presses **Start Next Turn**. A future settings menu may surface this value.
-* Starting a new turn resets the revealed/purchased clue state to the new starting clue only.
+* Starting a new turn resets the revealed/purchased clue state to the new starting clues only.
 
-Random selection points (country choice, starting clue) accept an injectable `random: () => number` dependency for deterministic tests. Prefer the shared helpers in `src/game/random.ts` (`randomIndex`, `pickRandom`).
+Random selection points (country choice, starting clues) accept an injectable `random: () => number` dependency for deterministic tests. Prefer the shared helpers in `src/game/random.ts` (`randomIndex`, `pickRandom`).
 
 Visual-clue conventions:
 
@@ -1208,13 +1209,13 @@ Economy calculations are pure, testable functions in `src/game/economy.ts`: `cou
 Reward rules:
 
 * The reward for solving a turn is `reward = baseReward − (baseClueDeduction × Σ(tier × count))`, where `count` is the number of purchased clues in that tier. The result is clamped to `minimumReward`, so a reward can never go below the configured floor (or become negative).
-* The starting tier-0 clue is auto-revealed and never counts as purchased; free-tier clues contribute zero weight. Because the penalty weight is simply the tier number, future tiers (5, 6, ...) are rewarded automatically without restructuring.
-* `revealClue` records every paid reveal in both `revealedClueIds` and `purchasedClueIds`; the reward is computed only from `purchasedClueIds`. The tier-0 starting clue appears in `revealedClueIds` but never in `purchasedClueIds`.
+* The starting tier-0 clues are auto-revealed and never count as purchased; free-tier clues contribute zero weight. Because the penalty weight is simply the tier number, future tiers (5, 6, ...) are rewarded automatically without restructuring.
+* `revealClue` records every paid reveal in both `revealedClueIds` and `purchasedClueIds`; the reward is computed only from `purchasedClueIds`. The tier-0 starting clues appear in `revealedClueIds` but never in `purchasedClueIds`, so a turn solved without buying anything still awards the full `baseReward`.
 * A correct guess awards the computed reward and records `geodesAwarded` on the correct `GuessResult`. An incorrect guess awards nothing and deducts a life.
 
 State split:
 
-* `GameState` separates player state (`player.geodes`, `player.lives` — carried across turns) from turn state (`mysteryCountry`, `startingClueId`, `revealedClueIds`, `purchasedClueIds`, `guessResult` — reset each turn).
+* `GameState` separates player state (`player.geodes`, `player.lives` — carried across turns) from turn state (`mysteryCountry`, `startingClueIds`, `revealedClueIds`, `purchasedClueIds`, `guessResult` — reset each turn).
 * After a correctly solved turn, `startNextTurn` resets only the turn state and selects a new country, preserving the player's geodes and lives across turns. When the previous turn was lost to zero lives, `startNextTurn` instead resets the entire game to a fresh start (starting geodes, starting lives, turn 1), always behind an explicit player confirmation in the UI.
 
 Life purchases:
@@ -1225,7 +1226,7 @@ Life purchases:
 Debug Skip (temporary):
 
 * **Skip** is a temporary development convenience, not a real game rule. It is rendered as a button in the Turn status column and implemented as the pure `skipTurn(state, countries, random)` function in `src/game/game.ts` plus a `skipTurn` action on `useGame`. Do not expand it into a purchasable or rewarded game system.
-* `skipTurn` always advances to a brand-new turn: it increments `turn`, selects a fresh mystery country and starting clue, resets `guessResult`, `revealedClueIds`, and `purchasedClueIds`, and — unlike `startNextTurn` — never spends geodes, deducts a life, or awards a reward. It works regardless of the current clue/guess state, geodes, or lives (including a resolved turn or zero lives). Persistence flows through the existing `usePersistentGame` pipeline unchanged.
+* `skipTurn` always advances to a brand-new turn: it increments `turn`, selects a fresh mystery country and starting clues, resets `guessResult`, `revealedClueIds`, and `purchasedClueIds`, and — unlike `startNextTurn` — never spends geodes, deducts a life, or awards a reward. It works regardless of the current clue/guess state, geodes, or lives (including a resolved turn or zero lives). Persistence flows through the existing `usePersistentGame` pipeline unchanged.
 
 ---
 

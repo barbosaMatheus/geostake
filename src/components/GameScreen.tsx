@@ -66,7 +66,7 @@ function GameScreen({
       <CluePanel
         country={mysteryCountry}
         geodes={player.geodes}
-        startingClueId={gameState.startingClueId}
+        startingClueIds={gameState.startingClueIds}
         revealedClueIds={gameState.revealedClueIds}
         disabled={turnResolved}
         onReveal={revealClue}

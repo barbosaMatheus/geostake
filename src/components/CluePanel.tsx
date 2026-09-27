@@ -21,7 +21,7 @@ import CountryOutline from './CountryOutline'
 interface CluePanelProps {
   country: Country
   geodes: GeodeAmount
-  startingClueId: ClueId
+  startingClueIds: readonly ClueId[]
   revealedClueIds: readonly ClueId[]
   disabled?: boolean
   onReveal: (clueId: ClueId) => void
@@ -30,12 +30,12 @@ interface CluePanelProps {
 function CluePanel({
   country,
   geodes,
-  startingClueId,
+  startingClueIds,
   revealedClueIds,
   disabled = false,
   onReveal,
 }: CluePanelProps) {
-  const turnClues = getTurnClues(startingClueId, CLUES).filter(
+  const turnClues = getTurnClues(startingClueIds, CLUES).filter(
     (clue) => !isClueHiddenInUi(clue.id),
   )
   const tiers = getClueTiers(turnClues)
@@ -56,7 +56,7 @@ function CluePanel({
             clues={turnClues}
             country={country}
             geodes={geodes}
-            startingClueId={startingClueId}
+            startingClueIds={startingClueIds}
             revealedClueIds={revealedClueIds}
             disabled={disabled}
             onReveal={onReveal}
@@ -71,7 +71,7 @@ interface ClueRowProps {
   clue: ClueDefinition<ClueValue>
   country: Country
   geodes: GeodeAmount
-  startingClueId: ClueId
+  startingClueIds: readonly ClueId[]
   revealedClueIds: readonly ClueId[]
   disabled?: boolean
   onReveal: (clueId: ClueId) => void
@@ -100,7 +100,7 @@ function ClueTierBlock({
   clues,
   country,
   geodes,
-  startingClueId,
+  startingClueIds,
   revealedClueIds,
   disabled,
   onReveal,
@@ -120,7 +120,7 @@ function ClueTierBlock({
             clue={clue}
             country={country}
             geodes={geodes}
-            startingClueId={startingClueId}
+            startingClueIds={startingClueIds}
             revealedClueIds={revealedClueIds}
             disabled={disabled}
             onReveal={onReveal}
@@ -135,12 +135,12 @@ function ClueRow({
   clue,
   country,
   geodes,
-  startingClueId,
+  startingClueIds,
   revealedClueIds,
   disabled = false,
   onReveal,
 }: ClueRowProps) {
-  const isStartingClue = clue.id === startingClueId
+  const isStartingClue = startingClueIds.includes(clue.id)
   const isRevealed = revealedClueIds.includes(clue.id)
 
   if (isRevealed) {

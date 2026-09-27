@@ -2,7 +2,7 @@ import type { Country } from '../types/country'
 import type { GameState } from '../types/game'
 import type { GuessResult } from '../types/guess'
 import { GAME_CONFIG, type GameConfig } from './config'
-import { selectStartingClue } from './clues'
+import { selectStartingClues } from './clues'
 import { applyGeodeReward, calculateGuessReward } from './economy'
 import { ECONOMY_CONFIG, type EconomyConfig } from './economyConfig'
 import { GuessChecker, normalizeGuess } from './guessChecker'
@@ -34,7 +34,7 @@ export function createInitialGameState(
     throw new Error('Cannot start a game without any countries')
   }
   const mysteryCountry = selectMysteryCountry(countries, random)
-  const startingClueId = selectStartingClue(mysteryCountry, random)
+  const startingClueIds = selectStartingClues(mysteryCountry, random)
   return {
     player: {
       geodes: config.economy.startingGeodes,
@@ -43,8 +43,8 @@ export function createInitialGameState(
     mysteryCountry,
     turn: 1,
     guessResult: null,
-    startingClueId,
-    revealedClueIds: [startingClueId],
+    startingClueIds,
+    revealedClueIds: [...startingClueIds],
     purchasedClueIds: [],
   }
 }
@@ -121,14 +121,14 @@ export function startNextTurn(
     return createInitialGameState(countries, config, random)
   }
   const mysteryCountry = selectMysteryCountry(countries, random)
-  const startingClueId = selectStartingClue(mysteryCountry, random)
+  const startingClueIds = selectStartingClues(mysteryCountry, random)
   return {
     ...state,
     turn: state.turn + 1,
     mysteryCountry,
     guessResult: null,
-    startingClueId,
-    revealedClueIds: [startingClueId],
+    startingClueIds,
+    revealedClueIds: [...startingClueIds],
     purchasedClueIds: [],
   }
 }
@@ -149,14 +149,14 @@ export function skipTurn(
     throw new Error('Cannot skip to a new turn without any countries')
   }
   const mysteryCountry = selectMysteryCountry(countries, random)
-  const startingClueId = selectStartingClue(mysteryCountry, random)
+  const startingClueIds = selectStartingClues(mysteryCountry, random)
   return {
     ...state,
     turn: state.turn + 1,
     mysteryCountry,
     guessResult: null,
-    startingClueId,
-    revealedClueIds: [startingClueId],
+    startingClueIds,
+    revealedClueIds: [...startingClueIds],
     purchasedClueIds: [],
   }
 }

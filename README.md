@@ -72,10 +72,10 @@ replacing it. No statistics, settings, or account data are persisted.
 
 ## Clue System
 
-Clues are grouped into five numeric tiers. One free tier-0 clue is randomly
-selected and revealed at the start of every turn; that starting clue is the
-only free-tier clue offered for the turn, and the other free-tier clues are
-omitted until a later turn gives them another random chance. Every other clue
+Clues are grouped into five numeric tiers. Two distinct free tier-0 clues are
+randomly selected and revealed at the start of every turn; those starting clues
+are the only free-tier clues offered for the turn, and the other free-tier
+clues are omitted until a later turn gives them another random chance. Every other clue
 must be purchased with geodes, and clues whose data is missing for the current
 country cannot be purchased.
 
@@ -236,7 +236,7 @@ never accepted for the other country, unconditionally. Currently excluded:
 
 While in development, a **Skip** button appears under the Turn column of the
 status bar. It advances immediately to a brand-new turn — a freshly selected
-mystery country and starting clue — without spending geodes, deducting a life,
+mystery country and starting clues — without spending geodes, deducting a life,
 or awarding any reward. It works whether the current turn is still active or
 already resolved, and it is saved through the normal persistence pipeline. It
 is intended as a temporary development convenience and will be removed once

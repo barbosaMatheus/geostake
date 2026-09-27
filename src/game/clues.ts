@@ -8,7 +8,7 @@ import {
   findClueDefinition,
   getClueDefinition,
 } from './clueConfig'
-import { pickRandom } from './random'
+import { randomIndex } from './random'
 
 export function getAvailableClues(
   country: Country,
@@ -18,10 +18,12 @@ export function getAvailableClues(
 }
 
 export function getTurnClues(
-  startingClueId: ClueId,
+  startingClueIds: readonly ClueId[],
   clues: readonly ClueDefinition<ClueValue>[] = CLUES,
 ): readonly ClueDefinition<ClueValue>[] {
-  return clues.filter((clue) => clue.tier !== 0 || clue.id === startingClueId)
+  return clues.filter(
+    (clue) => clue.tier !== 0 || startingClueIds.includes(clue.id),
+  )
 }
 
 export function isClueAvailable(
@@ -66,18 +68,34 @@ export function canAffordClue(
   return geodes >= getClueCost(id, costMultiplier, clues)
 }
 
-export function selectStartingClue(
+/** How many free tier-0 clues every turn reveals for free. */
+export const STARTING_CLUE_COUNT = 2
+
+/**
+ * Picks the turn's free starting clues: up to `count` distinct tier-0 clues
+ * that are available for the country. Each pick is removed from the pool, so
+ * the same clue is never chosen twice. A smaller pool is used as-is, and an
+ * empty pool falls back to `population`, so a turn always starts with a free
+ * clue.
+ */
+export function selectStartingClues(
   country: Country,
   random: () => number = Math.random,
   clues: readonly ClueDefinition<ClueValue>[] = CLUES,
-): ClueId {
-  const tierZeroClues = clues.filter(
+  count: number = STARTING_CLUE_COUNT,
+): readonly ClueId[] {
+  const pool = clues.filter(
     (clue) => clue.tier === 0 && clue.isAvailable(country),
   )
-  if (tierZeroClues.length === 0) {
-    return 'population'
+  if (pool.length === 0) {
+    return ['population']
   }
-  return pickRandom(tierZeroClues, random).id
+  const selected: ClueId[] = []
+  while (selected.length < count && pool.length > 0) {
+    const [picked] = pool.splice(randomIndex(pool.length, random), 1)
+    selected.push(picked.id)
+  }
+  return selected
 }
 
 export function revealClue(
@@ -92,7 +110,7 @@ export function revealClue(
   if (definition === undefined) {
     return state
   }
-  if (definition.tier === 0 && clueId !== state.startingClueId) {
+  if (definition.tier === 0 && !state.startingClueIds.includes(clueId)) {
     return state
   }
   if (state.revealedClueIds.includes(clueId)) {

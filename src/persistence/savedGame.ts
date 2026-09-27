@@ -13,7 +13,12 @@ import {
 } from './storage'
 
 export const SAVED_GAME_KEY = 'geostake:saved-game'
-export const SAVED_GAME_VERSION = 1
+/**
+ * Version 2 replaced the single `startingClueId` with `startingClueIds`, now
+ * that a turn reveals two free clues. Saves written by an older version are
+ * rejected and treated as "no saved game" rather than being migrated.
+ */
+export const SAVED_GAME_VERSION = 2
 
 const VALID_CLUE_IDS: ReadonlySet<string> = new Set(
   CLUES.map((clue) => clue.id),
@@ -32,7 +37,7 @@ export interface SavedGameState {
   player: PlayerState
   turn: number
   mysteryCountryId: string
-  startingClueId: ClueId
+  startingClueIds: readonly ClueId[]
   revealedClueIds: readonly ClueId[]
   purchasedClueIds: readonly ClueId[]
   guessResult: SavedGuessResult | null
@@ -60,6 +65,10 @@ function isClueId(value: unknown): value is ClueId {
 
 function isClueIdList(value: unknown): value is readonly ClueId[] {
   return Array.isArray(value) && value.every(isClueId)
+}
+
+function isDistinctClueIdList(value: unknown): value is readonly ClueId[] {
+  return isClueIdList(value) && new Set(value).size === value.length
 }
 
 function isSavedGuessResult(value: unknown): value is SavedGuessResult {
@@ -111,7 +120,10 @@ export function isSavedGameState(value: unknown): value is SavedGameState {
   if (typeof value.mysteryCountryId !== 'string') {
     return false
   }
-  if (!isClueId(value.startingClueId)) {
+  if (!isDistinctClueIdList(value.startingClueIds)) {
+    return false
+  }
+  if (value.startingClueIds.length === 0) {
     return false
   }
   if (!isClueIdList(value.revealedClueIds)) {
@@ -129,8 +141,10 @@ export function isSavedGameState(value: unknown): value is SavedGameState {
 function isCoherent(value: Record<string, unknown>): boolean {
   const revealed = value.revealedClueIds as readonly ClueId[]
   const purchased = value.purchasedClueIds as readonly ClueId[]
-  if (!revealed.includes(value.startingClueId as ClueId)) {
-    return false
+  for (const id of value.startingClueIds as readonly ClueId[]) {
+    if (!revealed.includes(id)) {
+      return false
+    }
   }
   for (const id of purchased) {
     if (!revealed.includes(id)) {
@@ -154,7 +168,7 @@ export function serializeGameState(state: GameState): SavedGameState {
     player: { ...state.player },
     turn: state.turn,
     mysteryCountryId: state.mysteryCountry.id,
-    startingClueId: state.startingClueId,
+    startingClueIds: [...state.startingClueIds],
     revealedClueIds: [...state.revealedClueIds],
     purchasedClueIds: [...state.purchasedClueIds],
     guessResult:
@@ -203,7 +217,7 @@ export function restoreGameState(
     player: { ...saved.player },
     turn: saved.turn,
     mysteryCountry,
-    startingClueId: saved.startingClueId,
+    startingClueIds: [...saved.startingClueIds],
     revealedClueIds: [...saved.revealedClueIds],
     purchasedClueIds: [...saved.purchasedClueIds],
     guessResult,

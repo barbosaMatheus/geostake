@@ -61,14 +61,14 @@ describe('GameScreen', () => {
     expect(onExit).toHaveBeenCalledTimes(1)
   })
 
-  it('starts a turn with exactly one randomly provided starting clue revealed', () => {
+  it('starts a turn with two distinct free starting clues revealed', () => {
     render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
 
     expect(screen.getByText('Population')).toBeInTheDocument()
     expect(screen.getByText('221,359,387')).toBeInTheDocument()
-    expect(screen.getAllByText('Starting clue')).toHaveLength(1)
+    expect(screen.getByText('Land Area')).toBeInTheDocument()
+    expect(screen.getAllByText('Starting clue')).toHaveLength(2)
     expect(screen.queryAllByRole('button', { name: /· Free/ })).toHaveLength(0)
-    expect(screen.queryByText('Land Area')).not.toBeInTheDocument()
     expect(screen.queryByText('Population Density')).not.toBeInTheDocument()
     expect(screen.queryByText('Hemisphere')).not.toBeInTheDocument()
     expect(screen.queryByText('Coastline')).not.toBeInTheDocument()
@@ -281,7 +281,7 @@ describe('GameScreen', () => {
     expect(
       screen.getByRole('button', { name: 'Region · 50 geodes' }),
     ).toBeInTheDocument()
-    expect(screen.getAllByText('Starting clue')).toHaveLength(1)
+    expect(screen.getAllByText('Starting clue')).toHaveLength(2)
     expect(screen.getByText('1440')).toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
@@ -394,7 +394,7 @@ describe('GameScreen', () => {
     expect(
       screen.getByRole('button', { name: 'Region · 50 geodes' }),
     ).toBeInTheDocument()
-    expect(screen.getAllByText('Starting clue')).toHaveLength(1)
+    expect(screen.getAllByText('Starting clue')).toHaveLength(2)
     expect(
       screen.getByText(/submit a guess to see the result/i),
     ).toBeInTheDocument()
