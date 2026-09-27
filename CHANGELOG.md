@@ -4,6 +4,30 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.15.0] - 2026-09-27
+
+### Changed
+
+- Reassigned the clue tiers to the new configuration. The **Free** tier now
+  holds Population, Land Area, Population Density, Coastline, and Hemisphere;
+  **Low** holds Region and Highest Elevation; **Medium** holds National Colors;
+  **High** holds Capital; and **Very High** holds Internet Country Code and
+  Country Flag. Clue extraction, formatting, labels, and every non-free clue
+  price are unchanged — a clue's tier and its `baseCost` are configured as
+  separate per-clue fields.
+- Coastline and Hemisphere are now free-tier clues with a `baseCost` of `0`,
+  matching the rest of the free tier: Coastline was priced at 20 and Hemisphere
+  at 10. Because a tier-0 clue can only ever be revealed as the free starting
+  clue, neither price was ever charged, so this only removes the misleading
+  configuration. The free starting-clue pool is now Population, Land Area,
+  Population Density, Coastline, and Hemisphere, and each turn re-rolls from it.
+- Because the reward weight is the clue's tier number, the reassignment slightly
+  raises the reward for a solved turn when Highest Elevation (now tier 1) or
+  National Colors (now tier 2) was purchased. The economy formula and all
+  economy configuration values are unchanged.
+
+[0.15.0]: https://github.com/barbosaMatheus/geostake
+
 ## [0.14.0] - 2026-09-27
 
 ### Removed

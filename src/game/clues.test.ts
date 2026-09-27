@@ -66,8 +66,16 @@ describe('selectStartingClue', () => {
     const withLast = selectStartingClue(japan, alwaysLast)
 
     expect(withFirst).toBe('population')
-    expect(withLast).toBe('population-density')
+    expect(withLast).toBe('hemisphere')
     expect(withFirst).not.toBe(withLast)
+  })
+
+  it('can select the free-tier hemisphere clue as the starting clue', () => {
+    const hemisphereOnly = CLUES.filter((clue) => clue.id === 'hemisphere')
+
+    expect(selectStartingClue(brazil, alwaysLast, hemisphereOnly)).toBe(
+      'hemisphere',
+    )
   })
 
   it('returns the sole tier zero clue when the clue list is narrowed', () => {
@@ -79,9 +87,11 @@ describe('selectStartingClue', () => {
   })
 
   it('falls back to population when no tier zero clue is available', () => {
-    const coastlineOnly = CLUES.filter((clue) => clue.id === 'coastline')
+    const highestElevationOnly = CLUES.filter(
+      (clue) => clue.id === 'highest-elevation',
+    )
 
-    expect(selectStartingClue(brazil, alwaysLast, coastlineOnly)).toBe(
+    expect(selectStartingClue(brazil, alwaysLast, highestElevationOnly)).toBe(
       'population',
     )
   })
@@ -172,7 +182,9 @@ describe('getTurnClues', () => {
 
     expect(ids).toContain('population')
     expect(ids).toContain('region')
-    expect(ids).toContain('coastline')
+    expect(ids).toContain('highest-elevation')
+    expect(ids).toContain('national-colors')
+    expect(ids).toContain('capital')
     expect(ids).toContain('internet-country-code')
   })
 
@@ -181,6 +193,15 @@ describe('getTurnClues', () => {
 
     expect(ids).not.toContain('land-area')
     expect(ids).not.toContain('population-density')
+    expect(ids).not.toContain('hemisphere')
+    expect(ids).not.toContain('coastline')
+  })
+
+  it('offers the free-tier hemisphere clue when it is the starting clue', () => {
+    const ids = getTurnClues('hemisphere', CLUES).map((clue) => clue.id)
+
+    expect(ids).toContain('hemisphere')
+    expect(ids).not.toContain('population')
   })
 })
 
@@ -296,10 +317,10 @@ describe('revealClue', () => {
 
   it('does not change game state for an unavailable clue', () => {
     const state = firstState()
-    const next = revealClue(state, 'coastline')
+    const next = revealClue(state, 'internet-country-code')
 
     expect(next).toBe(state)
-    expect(next.revealedClueIds).not.toContain('coastline')
+    expect(next.revealedClueIds).not.toContain('internet-country-code')
     expect(next.player.geodes).toBe(state.player.geodes)
   })
 
@@ -309,6 +330,26 @@ describe('revealClue', () => {
 
     expect(next).toBe(state)
     expect(next.revealedClueIds).not.toContain('land-area')
+  })
+
+  it('does not purchase the free-tier hemisphere clue when it does not start the turn', () => {
+    const state = firstState()
+    const next = revealClue(state, 'hemisphere')
+
+    expect(next).toBe(state)
+    expect(next.revealedClueIds).not.toContain('hemisphere')
+    expect(next.purchasedClueIds).toEqual([])
+    expect(next.player.geodes).toBe(state.player.geodes)
+  })
+
+  it('does not purchase the free-tier coastline clue when it does not start the turn', () => {
+    const japanState = createInitialGameState([japan], GAME_CONFIG, alwaysFirst)
+    const next = revealClue(japanState, 'coastline')
+
+    expect(next).toBe(japanState)
+    expect(next.revealedClueIds).not.toContain('coastline')
+    expect(next.purchasedClueIds).toEqual([])
+    expect(next.player.geodes).toBe(japanState.player.geodes)
   })
 
   it('keeps the starting clue revealed alongside purchased clues', () => {
@@ -360,8 +401,25 @@ describe('clue state across turns', () => {
     const state = revealClue(firstState(), 'region')
     const newTurn = nextTurnState(state, alwaysLast)
 
-    expect(newTurn.startingClueId).toBe('population-density')
-    expect(newTurn.revealedClueIds).toEqual(['population-density'])
+    expect(newTurn.startingClueId).toBe('hemisphere')
+    expect(newTurn.revealedClueIds).toEqual(['hemisphere'])
+  })
+})
+
+describe('moved clues keep their reveal behavior', () => {
+  it('charges the existing cost for the low-tier highest elevation clue', () => {
+    const japanState = createInitialGameState([japan], GAME_CONFIG, alwaysFirst)
+    const next = revealClue(japanState, 'highest-elevation')
+
+    expect(next.player.geodes).toBe(japanState.player.geodes - 100)
+    expect(next.purchasedClueIds).toEqual(['highest-elevation'])
+  })
+
+  it('charges the existing cost for the medium-tier national colors clue', () => {
+    const next = revealClue(firstState(), 'national-colors')
+
+    expect(next.player.geodes).toBe(firstState().player.geodes - 250)
+    expect(next.purchasedClueIds).toEqual(['national-colors'])
   })
 })
 

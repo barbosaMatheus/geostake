@@ -70,6 +70,8 @@ describe('GameScreen', () => {
     expect(screen.queryAllByRole('button', { name: /· Free/ })).toHaveLength(0)
     expect(screen.queryByText('Land Area')).not.toBeInTheDocument()
     expect(screen.queryByText('Population Density')).not.toBeInTheDocument()
+    expect(screen.queryByText('Hemisphere')).not.toBeInTheDocument()
+    expect(screen.queryByText('Coastline')).not.toBeInTheDocument()
   })
 
   it('never surfaces the country outline or lowest elevation clues in the UI', () => {

@@ -5,6 +5,7 @@ import {
   CLUES_HIDDEN_IN_UI,
   CLUE_COST_MULTIPLIER,
   getClueKind,
+  getCluesForTier,
   getClueTiers,
   isClueHiddenInUi,
 } from './clueConfig'
@@ -14,42 +15,71 @@ const expectedTiers: Record<ClueId, number> = {
   population: 0,
   'land-area': 0,
   'population-density': 0,
+  coastline: 0,
+  hemisphere: 0,
   region: 1,
-  hemisphere: 1,
-  coastline: 2,
-  'highest-elevation': 2,
+  'highest-elevation': 1,
+  'national-colors': 2,
   capital: 3,
-  'national-colors': 3,
+  'country-outline': 3,
   'internet-country-code': 4,
   'country-flag': 4,
-  'country-outline': 3,
+}
+
+const expectedTierMembers: Record<number, readonly ClueId[]> = {
+  0: [
+    'population',
+    'land-area',
+    'population-density',
+    'coastline',
+    'hemisphere',
+  ],
+  1: ['region', 'highest-elevation'],
+  2: ['national-colors'],
+  3: ['capital', 'country-outline'],
+  4: ['internet-country-code', 'country-flag'],
 }
 
 const expectedBaseCosts: Record<ClueId, number> = {
   population: 0,
   'land-area': 0,
   'population-density': 0,
+  coastline: 0,
+  hemisphere: 0,
   region: 10,
-  hemisphere: 10,
-  coastline: 20,
   'highest-elevation': 20,
-  capital: 50,
   'national-colors': 50,
+  capital: 50,
   'internet-country-code': 75,
   'country-flag': 75,
   'country-outline': 50,
+}
+
+const expectedCosts: Record<ClueId, number> = {
+  population: 0,
+  'land-area': 0,
+  'population-density': 0,
+  coastline: 0,
+  hemisphere: 0,
+  region: 50,
+  'highest-elevation': 100,
+  'national-colors': 250,
+  capital: 250,
+  'internet-country-code': 375,
+  'country-flag': 375,
+  'country-outline': 250,
 }
 
 const expectedKinds: Record<ClueId, 'text' | 'flag' | 'outline'> = {
   population: 'text',
   'land-area': 'text',
   'population-density': 'text',
-  region: 'text',
-  hemisphere: 'text',
   coastline: 'text',
+  hemisphere: 'text',
+  region: 'text',
   'highest-elevation': 'text',
-  capital: 'text',
   'national-colors': 'text',
+  capital: 'text',
   'internet-country-code': 'text',
   'country-flag': 'flag',
   'country-outline': 'outline',
@@ -59,7 +89,7 @@ describe('CLUES', () => {
   it('defines every expected clue with a unique id', () => {
     const ids = CLUES.map((clue) => clue.id)
     expect(new Set(ids).size).toBe(ids.length)
-    expect(ids).toEqual(Object.keys(expectedTiers))
+    expect(new Set(ids)).toEqual(new Set(Object.keys(expectedTiers)))
   })
 
   it('assigns every clue its correct tier', () => {
@@ -68,9 +98,39 @@ describe('CLUES', () => {
     }
   })
 
+  it('groups exactly the expected clues under each tier', () => {
+    for (const tier of getClueTiers(CLUES)) {
+      const actual = getCluesForTier(tier)
+        .map((clue) => clue.id)
+        .sort()
+      expect(actual).toEqual([...expectedTierMembers[tier]].sort())
+    }
+  })
+
+  it('places hemisphere, highest elevation, and national colors in their tiers', () => {
+    expect(expectedTiers.hemisphere).toBe(0)
+    expect(expectedTiers['highest-elevation']).toBe(1)
+    expect(expectedTiers['national-colors']).toBe(2)
+    expect(getCluesForTier(0).map((clue) => clue.id)).toContain('hemisphere')
+    expect(getCluesForTier(1).map((clue) => clue.id)).toContain(
+      'highest-elevation',
+    )
+    expect(getCluesForTier(2).map((clue) => clue.id)).toContain(
+      'national-colors',
+    )
+  })
+
   it('assigns every clue its correct base cost', () => {
     for (const clue of CLUES) {
       expect(clue.baseCost).toBe(expectedBaseCosts[clue.id])
+    }
+  })
+
+  it('keeps every in-game clue cost unchanged', () => {
+    for (const clue of CLUES) {
+      expect(getClueCost(clue.id), `cost for ${clue.id}`).toBe(
+        expectedCosts[clue.id],
+      )
     }
   })
 
@@ -88,14 +148,6 @@ describe('CLUES', () => {
       'country-flag',
       'country-outline',
     ])
-  })
-
-  it('keeps the existing Tier 3 and Tier 4 costs unchanged', () => {
-    expect(getClueCost('capital')).toBe(250)
-    expect(getClueCost('national-colors')).toBe(250)
-    expect(getClueCost('country-outline')).toBe(250)
-    expect(getClueCost('internet-country-code')).toBe(375)
-    expect(getClueCost('country-flag')).toBe(375)
   })
 
   it('exposes the five expected tiers in ascending order', () => {
@@ -162,10 +214,19 @@ describe('clue cost multiplier', () => {
     expect(getClueCost('region', 1)).toBe(10)
   })
 
-  it('charges nothing for tier zero clues', () => {
+  it('keeps the free tier free', () => {
     for (const clue of CLUES.filter((clue) => clue.tier === 0)) {
-      expect(clue.baseCost).toBe(0)
-      expect(getClueCost(clue.id)).toBe(0)
+      expect(clue.baseCost, `base cost for ${clue.id}`).toBe(0)
+      expect(getClueCost(clue.id), `cost for ${clue.id}`).toBe(0)
     }
+  })
+
+  it('keeps a tier 0 clue free even when its neighbours stay priced', () => {
+    expect(expectedTiers.coastline).toBe(0)
+    expect(expectedTiers.hemisphere).toBe(0)
+    expect(getClueCost('coastline')).toBe(0)
+    expect(getClueCost('hemisphere')).toBe(0)
+    expect(getClueCost('region')).toBe(50)
+    expect(getClueCost('highest-elevation')).toBe(100)
   })
 })

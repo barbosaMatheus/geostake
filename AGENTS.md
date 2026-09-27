@@ -1144,6 +1144,16 @@ The authoritative source of truth is `src/game/clueConfig.ts`:
 
 Base costs are the normalized source values (0/10/20/50/75); the multiplier produces the in-game costs (0/50/100/250/375). Difficulty modes are **not** implemented; the multiplier is centralized so a future difficulty selector can change it without touching clue logic.
 
+`CLUES` is ordered by tier, and the current assignment is:
+
+* Tier 0 (Free): `population`, `land-area`, `population-density`, `coastline`, `hemisphere`
+* Tier 1 (Low): `region`, `highest-elevation`
+* Tier 2 (Medium): `national-colors`
+* Tier 3 (High): `capital`, `country-outline`
+* Tier 4 (Very High): `internet-country-code`, `country-flag`
+
+**Tier and price are configured independently, but a tier-0 clue must be free.** The `tier` drives the tier group, the reward weight, and membership in the free starting-clue pool; the price comes from the clue's own `baseCost`. Every tier-0 clue therefore keeps `baseCost: 0` — including `coastline` and `hemisphere`, which moved into the free tier. Non-free tiers currently price at `tier × 10` (Region 10, Highest Elevation 20, National Colors 50, Capital 50, Internet Country Code 75, Country Flag 75, Country Outline 50), but the two fields are separate: move a clue's tier without touching its cost, and keep a new tier-0 clue's base cost at 0.
+
 Gameplay rules live as pure, testable functions in `src/game/clues.ts` (availability, value extraction, formatting, costing, random tier-0 starting-clue selection with a `population` fallback, and `revealClue`). UI components and JSX event handlers must not reimplement these rules.
 
 Retired clues:

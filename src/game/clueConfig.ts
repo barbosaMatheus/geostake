@@ -21,6 +21,12 @@ function formatDecimal(value: number): string {
   }).format(value)
 }
 
+/**
+ * The canonical clue list, ordered by tier. `tier` drives the tier group, the
+ * reward weight, and the free starting-clue pool, while `baseCost` is a separate
+ * per-clue field that sets the purchase price (currently tier × 10). Keep a
+ * tier-0 clue's base cost at 0 so the free tier really is free.
+ */
 export const CLUES: readonly ClueDefinition<ClueValue>[] = [
   {
     id: 'population',
@@ -50,6 +56,24 @@ export const CLUES: readonly ClueDefinition<ClueValue>[] = [
     formatValue: (value) => `${formatDecimal(value)} per km²`,
   } satisfies ClueDefinition<number>,
   {
+    id: 'coastline',
+    tier: 0,
+    baseCost: 0,
+    label: 'Coastline',
+    isAvailable: (country) => country.coastlineKm !== undefined,
+    getValue: (country) => country.coastlineKm as number,
+    formatValue: (value) => `${formatNumber(value)} km`,
+  } satisfies ClueDefinition<number>,
+  {
+    id: 'hemisphere',
+    tier: 0,
+    baseCost: 0,
+    label: 'Hemisphere',
+    isAvailable: () => true,
+    getValue: (country) => country.hemisphere,
+    formatValue: (value) => value,
+  } satisfies ClueDefinition<string>,
+  {
     id: 'region',
     tier: 1,
     baseCost: 10,
@@ -59,32 +83,23 @@ export const CLUES: readonly ClueDefinition<ClueValue>[] = [
     formatValue: (value) => value,
   } satisfies ClueDefinition<string>,
   {
-    id: 'hemisphere',
-    tier: 1,
-    baseCost: 10,
-    label: 'Hemisphere',
-    isAvailable: () => true,
-    getValue: (country) => country.hemisphere,
-    formatValue: (value) => value,
-  } satisfies ClueDefinition<string>,
-  {
-    id: 'coastline',
-    tier: 2,
-    baseCost: 20,
-    label: 'Coastline',
-    isAvailable: (country) => country.coastlineKm !== undefined,
-    getValue: (country) => country.coastlineKm as number,
-    formatValue: (value) => `${formatNumber(value)} km`,
-  } satisfies ClueDefinition<number>,
-  {
     id: 'highest-elevation',
-    tier: 2,
+    tier: 1,
     baseCost: 20,
     label: 'Highest Elevation',
     isAvailable: (country) => country.highestElevationM !== undefined,
     getValue: (country) => country.highestElevationM as number,
     formatValue: (value) => `${formatNumber(value)} m`,
   } satisfies ClueDefinition<number>,
+  {
+    id: 'national-colors',
+    tier: 2,
+    baseCost: 50,
+    label: 'National Colors',
+    isAvailable: (country) => country.nationalColors !== undefined,
+    getValue: (country) => country.nationalColors as readonly string[],
+    formatValue: (value) => value.join(', '),
+  } satisfies ClueDefinition<readonly string[]>,
   {
     id: 'capital',
     tier: 3,
@@ -94,15 +109,6 @@ export const CLUES: readonly ClueDefinition<ClueValue>[] = [
     getValue: (country) => country.capital,
     formatValue: (value) => value,
   } satisfies ClueDefinition<string>,
-  {
-    id: 'national-colors',
-    tier: 3,
-    baseCost: 50,
-    label: 'National Colors',
-    isAvailable: (country) => country.nationalColors !== undefined,
-    getValue: (country) => country.nationalColors as readonly string[],
-    formatValue: (value) => value.join(', '),
-  } satisfies ClueDefinition<readonly string[]>,
   {
     id: 'internet-country-code',
     tier: 4,

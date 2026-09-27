@@ -79,21 +79,29 @@ omitted until a later turn gives them another random chance. Every other clue
 must be purchased with geodes, and clues whose data is missing for the current
 country cannot be purchased.
 
-| Tier | Name      | Clues                                     | Base Cost |
-| ---- | --------- | ----------------------------------------- | --------: |
-| 0    | Free      | Population, Land Area, Population Density |         0 |
-| 1    | Low       | Region, Hemisphere                        |        10 |
-| 2    | Medium    | Coastline, Highest Elevation              |        20 |
-| 3    | High      | Capital, National Colors                  |        50 |
-| 4    | Very High | Internet Country Code, Country Flag       |        75 |
+| Tier | Name      | Clues                                                            | Base Cost |
+| ---- | --------- | ---------------------------------------------------------------- | --------: |
+| 0    | Free      | Population, Land Area, Population Density, Coastline, Hemisphere |         0 |
+| 1    | Low       | Region, Highest Elevation                                        |   10 / 20 |
+| 2    | Medium    | National Colors                                                  |        50 |
+| 3    | High      | Capital                                                          |        50 |
+| 4    | Very High | Internet Country Code, Country Flag                              |   75 / 75 |
+
+A clue's tier and its price are configured as separate per-clue fields: the
+tier decides the tier group, the reward weight, and membership in the free
+starting-clue pool, while the price comes from the clue's own base cost. The
+free tier is priced at 0, so every tier-0 clue is genuinely free; the Low tier
+carries two prices (Region 10, Highest Elevation 20) and Very High two as well
+(75 each).
 
 The current cost of a clue is its base cost times the centralized
 `CLUE_COST_MULTIPLIER` (default `5`, the normal-difficulty multiplier), so the
-in-game costs are currently 0 / 50 / 100 / 250 / 375 geodes. The multiplier
-lives in `src/game/clueConfig.ts` and is designed to make future difficulty
-modes change only that value. Clue tiers and definitions are data-driven, so
-additional tiers (5, 6, ...) and clues can be added without restructuring the
-system. Clue rules live in pure, unit-tested functions in `src/game/clues.ts`.
+in-game costs are currently 0, 50, 100, 250, or 375 geodes depending on the
+clue. The multiplier lives in `src/game/clueConfig.ts` and is designed to make
+future difficulty modes change only that value. Clue tiers and definitions are
+data-driven, so additional tiers (5, 6, ...) and clues can be added without
+restructuring the system. Clue rules live in pure, unit-tested functions in
+`src/game/clues.ts`.
 
 The **Country Flag** clue (tier 4) is **visual** instead of text: it shows the
 mystery country's flag directly in the clue panel with a generic accessible

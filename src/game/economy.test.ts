@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { ClueDefinition, ClueValue } from '../types/clue'
+import type { ClueDefinition, ClueId, ClueValue } from '../types/clue'
 import type { PlayerState } from '../types/player'
-import { getClueDefinition } from './clueConfig'
 import {
   applyGeodeReward,
   calculateGuessReward,
@@ -15,6 +14,30 @@ import { ECONOMY_CONFIG } from './economyConfig'
 function player(geodes: number, lives: number): PlayerState {
   return { geodes, lives }
 }
+
+function clueAt(id: ClueId, tier: number): ClueDefinition<ClueValue> {
+  return {
+    id,
+    tier,
+    baseCost: 0,
+    label: id,
+    isAvailable: () => true,
+    getValue: () => id,
+    formatValue: (value) => String(value),
+  }
+}
+
+/**
+ * A fixed tier layout, so the reward formula's "weight = tier number" rule is
+ * tested independently of the real clue configuration in `clueConfig.ts`.
+ */
+const TIERED_CLUES: readonly ClueDefinition<ClueValue>[] = [
+  clueAt('population', 0),
+  clueAt('region', 1),
+  clueAt('coastline', 2),
+  clueAt('capital', 3),
+  clueAt('internet-country-code', 4),
+]
 
 const generousConfig = {
   ...ECONOMY_CONFIG,
@@ -31,8 +54,25 @@ describe('countPurchasedCluesByTier', () => {
 
   it('counts clues grouped by tier', () => {
     expect(
-      countPurchasedCluesByTier(['region', 'hemisphere', 'capital']),
-    ).toEqual({ 1: 2, 3: 1 })
+      countPurchasedCluesByTier(
+        ['region', 'coastline', 'capital'],
+        TIERED_CLUES,
+      ),
+    ).toEqual({ 1: 1, 2: 1, 3: 1 })
+  })
+})
+
+describe('reward weights for the configured clue tiers', () => {
+  it('weighs each configured clue by the tier it currently belongs to', () => {
+    expect(countPurchasedCluesByTier(['hemisphere', 'coastline'])).toEqual({
+      0: 2,
+    })
+    expect(countPurchasedCluesByTier(['region', 'highest-elevation'])).toEqual({
+      1: 2,
+    })
+    expect(countPurchasedCluesByTier(['national-colors'])).toEqual({ 2: 1 })
+    expect(countPurchasedCluesByTier(['capital'])).toEqual({ 3: 1 })
+    expect(countPurchasedCluesByTier(['country-flag'])).toEqual({ 4: 1 })
   })
 })
 
@@ -43,19 +83,22 @@ describe('calculateRewardDeduction', () => {
 
   it('weights each purchased clue by its tier', () => {
     expect(
-      calculateRewardDeduction([
-        'region',
-        'hemisphere',
-        'coastline',
-        'capital',
-        'internet-country-code',
-      ]),
-    ).toBe(11)
+      calculateRewardDeduction(
+        [
+          'population',
+          'region',
+          'coastline',
+          'capital',
+          'internet-country-code',
+        ],
+        TIERED_CLUES,
+      ),
+    ).toBe(10)
   })
 
   it('ignores free-tier clues in the weighting', () => {
     expect(
-      calculateRewardDeduction(['population', 'land-area', 'region']),
+      calculateRewardDeduction(['population', 'region'], TIERED_CLUES),
     ).toBe(1)
   })
 })
@@ -66,40 +109,54 @@ describe('calculateGuessReward', () => {
   })
 
   it('subtracts the deduction for a single tier-one clue', () => {
-    expect(calculateGuessReward(['region'])).toBe(490)
+    expect(calculateGuessReward(['region'], ECONOMY_CONFIG, TIERED_CLUES)).toBe(
+      490,
+    )
   })
 
   it('subtracts the combined deduction for one clue per tier up to four', () => {
     expect(
-      calculateGuessReward([
-        'region',
-        'coastline',
-        'capital',
-        'internet-country-code',
-      ]),
+      calculateGuessReward(
+        ['region', 'coastline', 'capital', 'internet-country-code'],
+        ECONOMY_CONFIG,
+        TIERED_CLUES,
+      ),
     ).toBe(400)
   })
 
   it('subtracts each tier count times its tier weight', () => {
-    expect(calculateGuessReward(['region', 'capital', 'national-colors'])).toBe(
-      430,
-    )
-    expect(calculateGuessReward(['hemisphere', 'coastline'])).toBe(470)
+    expect(
+      calculateGuessReward(['region', 'capital'], ECONOMY_CONFIG, TIERED_CLUES),
+    ).toBe(460)
+    expect(
+      calculateGuessReward(
+        ['coastline', 'coastline'],
+        ECONOMY_CONFIG,
+        TIERED_CLUES,
+      ),
+    ).toBe(460)
   })
 
   it('applies the configured reward values', () => {
-    expect(calculateGuessReward(['region'], generousConfig)).toBe(900)
+    expect(calculateGuessReward(['region'], generousConfig, TIERED_CLUES)).toBe(
+      900,
+    )
   })
 
   it('never returns less than the configured minimum reward', () => {
     const harshConfig = { ...ECONOMY_CONFIG, baseClueDeduction: 200 }
     const heavyLoad = calculateGuessReward(
-      ['region', 'hemisphere', 'coastline', 'capital'],
+      ['region', 'coastline', 'capital', 'internet-country-code'],
       harshConfig,
+      TIERED_CLUES,
     )
     expect(heavyLoad).toBe(harshConfig.minimumReward)
 
-    const lightLoad = calculateGuessReward(['region'], harshConfig)
+    const lightLoad = calculateGuessReward(
+      ['region'],
+      harshConfig,
+      TIERED_CLUES,
+    )
     expect(lightLoad).toBeGreaterThan(harshConfig.minimumReward)
   })
 
@@ -110,12 +167,8 @@ describe('calculateGuessReward', () => {
 
   it('weights future tiers automatically by their tier number', () => {
     const tierFiveClues: readonly ClueDefinition<ClueValue>[] = [
-      getClueDefinition('population'),
-      {
-        ...getClueDefinition('internet-country-code'),
-        tier: 5,
-        baseCost: 0,
-      },
+      clueAt('population', 0),
+      clueAt('internet-country-code', 5),
     ]
 
     expect(

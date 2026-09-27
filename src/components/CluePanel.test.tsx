@@ -59,9 +59,33 @@ describe('CluePanel', () => {
 
     expect(screen.queryByText('Land Area')).not.toBeInTheDocument()
     expect(screen.queryByText('Population Density')).not.toBeInTheDocument()
+    expect(screen.queryByText('Hemisphere')).not.toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Region · 50 geodes' }),
     ).toBeInTheDocument()
+  })
+
+  it('offers the free-tier coastline clue only when it starts the turn', () => {
+    renderPanel({
+      country: japan,
+      startingClueId: 'coastline',
+      revealedClueIds: ['coastline'],
+    })
+
+    expect(
+      screen.queryByRole('button', { name: /Coastline/ }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByText('Coastline')).toBeInTheDocument()
+    expect(screen.getByText('29,751 km')).toBeInTheDocument()
+  })
+
+  it('never offers a purchase control for the free-tier hemisphere clue', () => {
+    renderPanel()
+
+    expect(
+      screen.queryByRole('button', { name: /Hemisphere/ }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText('Hemisphere')).not.toBeInTheDocument()
   })
 
   it('never offers the retired lowest elevation clue, even when the country data has it', () => {
@@ -80,7 +104,7 @@ describe('CluePanel', () => {
       screen.getByRole('button', { name: 'Highest Elevation · 100 geodes' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Coastline · 100 geodes' }),
+      screen.getByRole('button', { name: 'National Colors · 250 geodes' }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('button', {
@@ -100,7 +124,7 @@ describe('CluePanel', () => {
   it('marks clues whose optional data is missing as unavailable', () => {
     renderPanel()
 
-    expect(screen.getAllByText('Unavailable for this country')).toHaveLength(4)
+    expect(screen.getAllByText('Unavailable for this country')).toHaveLength(3)
   })
 
   it('disables and flags clues that cost more geodes than the player has', () => {
@@ -189,7 +213,7 @@ describe('CluePanel visual clues', () => {
   it('marks the country flag unavailable when the country has no resolvable asset', () => {
     renderPanel({ country: brazil })
 
-    expect(screen.getAllByText('Unavailable for this country')).toHaveLength(4)
+    expect(screen.getAllByText('Unavailable for this country')).toHaveLength(3)
     expect(
       screen.queryByRole('button', { name: 'Country Flag · 375 geodes' }),
     ).not.toBeInTheDocument()
