@@ -1,10 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { TEST_COUNTRIES } from '../tests/fixtures'
+import type { ClueId } from '../types/clue'
+import type { Country } from '../types/country'
 import type { GameState } from '../types/game'
 import { GAME_CONFIG } from './config'
+import { calculateGuessReward } from './economy'
 import { ECONOMY_CONFIG } from './economyConfig'
-import { CLUES } from './clueConfig'
-import { revealClue, STARTING_CLUE_COUNT } from './clues'
+import { CLUES, isClueHiddenInUi } from './clueConfig'
+import {
+  getAvailableClues,
+  getClueCost,
+  revealClue,
+  STARTING_CLUE_COUNT,
+} from './clues'
 import {
   applyGuess,
   createInitialGameState,
@@ -17,6 +25,13 @@ import {
 } from './game'
 
 const alwaysSelectFirst = () => 0
+
+/** Every clue the player can be shown for a country, in tier order. */
+function playerFacingAvailableIds(country: Country): readonly ClueId[] {
+  return getAvailableClues(country)
+    .filter((clue) => !isClueHiddenInUi(clue.id))
+    .map((clue) => clue.id)
+}
 const alwaysSelectLast = () => 0.9999
 
 describe('normalizeCountryName', () => {
@@ -181,6 +196,123 @@ describe('applyGuess', () => {
       withClue.player.geodes +
         (ECONOMY_CONFIG.baseReward - ECONOMY_CONFIG.baseClueDeduction),
     )
+  })
+
+  it('reveals every remaining available clue after a correct guess', () => {
+    const withPurchase = revealClue(
+      createInitialGameState(TEST_COUNTRIES, GAME_CONFIG, alwaysSelectFirst),
+      'region',
+    )
+    const next = applyGuess(withPurchase, TEST_COUNTRIES[0].name)
+
+    expect(new Set(next.revealedClueIds)).toEqual(
+      new Set(playerFacingAvailableIds(TEST_COUNTRIES[0])),
+    )
+    expect(next.revealedClueIds).toContain('capital')
+  })
+
+  it('charges nothing for the end-of-turn reveal', () => {
+    const withPurchase = revealClue(
+      createInitialGameState(TEST_COUNTRIES, GAME_CONFIG, alwaysSelectFirst),
+      'capital',
+    )
+    const next = applyGuess(withPurchase, TEST_COUNTRIES[0].name)
+
+    // Only the purchased clue costs geodes; the remaining clues are free.
+    expect(withPurchase.player.geodes).toBe(
+      ECONOMY_CONFIG.startingGeodes - getClueCost('capital'),
+    )
+    expect(next.player.geodes).toBe(
+      withPurchase.player.geodes +
+        calculateGuessReward(withPurchase.purchasedClueIds),
+    )
+  })
+
+  it('never records the end-of-turn reveals as purchased clues', () => {
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    const next = applyGuess(state, TEST_COUNTRIES[0].name)
+
+    expect(next.purchasedClueIds).toEqual([])
+    expect(next.revealedClueIds.length).toBeGreaterThan(2)
+  })
+
+  it('does not reduce the reward for the free starting clues', () => {
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    const next = applyGuess(state, TEST_COUNTRIES[0].name)
+
+    expect(state.revealedClueIds).toHaveLength(2)
+    expect(next.guessResult?.outcome).toBe('correct')
+    if (next.guessResult?.outcome === 'correct') {
+      expect(next.guessResult.geodesAwarded).toBe(ECONOMY_CONFIG.baseReward)
+    }
+  })
+
+  it('settles the reward from purchases before revealing the remaining clues', () => {
+    const withPurchase = revealClue(
+      createInitialGameState(TEST_COUNTRIES, GAME_CONFIG, alwaysSelectFirst),
+      'region',
+    )
+    const expectedReward = calculateGuessReward(withPurchase.purchasedClueIds)
+    const next = applyGuess(withPurchase, TEST_COUNTRIES[0].name)
+
+    expect(next.guessResult?.outcome).toBe('correct')
+    if (next.guessResult?.outcome !== 'correct') {
+      return
+    }
+    expect(next.guessResult.geodesAwarded).toBe(
+      ECONOMY_CONFIG.baseReward - ECONOMY_CONFIG.baseClueDeduction,
+    )
+    expect(next.guessResult.geodesAwarded).toBe(expectedReward)
+
+    // Regression guard: the reward must not be recomputed with the free
+    // end-of-turn reveals treated as purchased clues.
+    expect(next.guessResult.geodesAwarded).toBeGreaterThan(
+      calculateGuessReward(next.revealedClueIds),
+    )
+  })
+
+  it('reveals every remaining available clue when the player runs out of lives', () => {
+    let state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    for (
+      let remaining = ECONOMY_CONFIG.startingLives;
+      remaining > 0;
+      remaining -= 1
+    ) {
+      state = applyGuess(state, 'Atlantis')
+    }
+
+    expect(state.player.lives).toBe(0)
+    expect(state.guessResult?.outcome).toBe('incorrect')
+    expect(state.player.geodes).toBe(ECONOMY_CONFIG.startingGeodes)
+    expect(state.purchasedClueIds).toEqual([])
+    expect(new Set(state.revealedClueIds)).toEqual(
+      new Set(playerFacingAvailableIds(TEST_COUNTRIES[0])),
+    )
+  })
+
+  it('keeps the remaining clues locked while the turn is still open', () => {
+    const state = createInitialGameState(
+      TEST_COUNTRIES,
+      GAME_CONFIG,
+      alwaysSelectFirst,
+    )
+    const next = applyGuess(state, 'Atlantis')
+
+    expect(next.guessResult).toBeNull()
+    expect(next.revealedClueIds).toEqual(state.revealedClueIds)
+    expect(next.revealedClueIds).not.toContain('capital')
   })
 
   it('reduces lives by one and leaves the turn open on an incorrect guess', () => {
@@ -430,7 +562,10 @@ describe('resolveGuess', () => {
     expect(next.guessResult?.outcome).toBe('correct')
     expect(next.turn).toBe(1)
     expect(next.startingClueIds).toEqual(state.startingClueIds)
-    expect(next.revealedClueIds).toEqual(state.revealedClueIds)
+    expect(next.revealedClueIds.length).toBeGreaterThan(
+      state.revealedClueIds.length,
+    )
+    expect(next.purchasedClueIds).toEqual(state.purchasedClueIds)
     expect(next.player.geodes).toBe(
       ECONOMY_CONFIG.startingGeodes + ECONOMY_CONFIG.baseReward,
     )

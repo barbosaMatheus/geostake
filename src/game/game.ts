@@ -2,7 +2,7 @@ import type { Country } from '../types/country'
 import type { GameState } from '../types/game'
 import type { GuessResult } from '../types/guess'
 import { GAME_CONFIG, type GameConfig } from './config'
-import { selectStartingClues } from './clues'
+import { revealRemainingClues, selectStartingClues } from './clues'
 import { applyGeodeReward, calculateGuessReward } from './economy'
 import { ECONOMY_CONFIG, type EconomyConfig } from './economyConfig'
 import { GuessChecker, normalizeGuess } from './guessChecker'
@@ -49,6 +49,11 @@ export function createInitialGameState(
   }
 }
 
+/**
+ * Applies a guess to an open turn. A turn that ends here — solved or out of
+ * lives — first settles the outcome (reward from the clues actually purchased,
+ * or the game-over result) and only then reveals the remaining clues for free.
+ */
 export function applyGuess(
   state: GameState,
   guessedName: string,
@@ -71,7 +76,7 @@ export function applyGuess(
       guessedName,
       livesRemaining: 0,
     }
-    return { ...state, player, guessResult }
+    return revealRemainingClues({ ...state, player, guessResult })
   }
   const reward = calculateGuessReward(state.purchasedClueIds, economy)
   const player = applyGeodeReward(state.player, reward)
@@ -82,7 +87,7 @@ export function applyGuess(
     livesRemaining: player.lives,
     geodesAwarded: reward,
   }
-  return { ...state, player, guessResult }
+  return revealRemainingClues({ ...state, player, guessResult })
 }
 
 export function resolveGuess(

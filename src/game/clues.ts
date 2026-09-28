@@ -7,6 +7,7 @@ import {
   CLUES,
   findClueDefinition,
   getClueDefinition,
+  isClueHiddenInUi,
 } from './clueConfig'
 import { randomIndex } from './random'
 
@@ -17,12 +18,17 @@ export function getAvailableClues(
   return clues.filter((clue) => clue.isAvailable(country))
 }
 
+/**
+ * The clues the panel offers this turn. Free-tier clues are only offered once
+ * they have been revealed, which happens for the turn's starting clues and for
+ * the free end-of-turn reveal.
+ */
 export function getTurnClues(
-  startingClueIds: readonly ClueId[],
+  revealedClueIds: readonly ClueId[],
   clues: readonly ClueDefinition<ClueValue>[] = CLUES,
 ): readonly ClueDefinition<ClueValue>[] {
   return clues.filter(
-    (clue) => clue.tier !== 0 || startingClueIds.includes(clue.id),
+    (clue) => clue.tier !== 0 || revealedClueIds.includes(clue.id),
   )
 }
 
@@ -131,5 +137,26 @@ export function revealClue(
     },
     revealedClueIds: [...state.revealedClueIds, clueId],
     purchasedClueIds: [...state.purchasedClueIds, clueId],
+  }
+}
+
+/**
+ * Reveals every remaining available clue for the mystery country, so a finished
+ * turn teaches the player about the country. It is free: geodes are untouched
+ * and the newly revealed clues are never recorded as purchased, so they cannot
+ * change a reward that has already been calculated. Clues that are hidden from
+ * the player are skipped, and retired clues are not in `CLUES` at all.
+ */
+export function revealRemainingClues(state: GameState): GameState {
+  const remainingIds = getAvailableClues(state.mysteryCountry)
+    .filter((clue) => !isClueHiddenInUi(clue.id))
+    .map((clue) => clue.id)
+    .filter((clueId) => !state.revealedClueIds.includes(clueId))
+  if (remainingIds.length === 0) {
+    return state
+  }
+  return {
+    ...state,
+    revealedClueIds: [...state.revealedClueIds, ...remainingIds],
   }
 }

@@ -75,9 +75,14 @@ replacing it. No statistics, settings, or account data are persisted.
 Clues are grouped into five numeric tiers. Two distinct free tier-0 clues are
 randomly selected and revealed at the start of every turn; those starting clues
 are the only free-tier clues offered for the turn, and the other free-tier
-clues are omitted until a later turn gives them another random chance. Every other clue
-must be purchased with geodes, and clues whose data is missing for the current
-country cannot be purchased.
+clues are omitted until a later turn gives them another random chance. Every
+other clue must be purchased with geodes, and clues whose data is missing for
+the current country cannot be purchased.
+
+When a turn ends — you guess the country correctly or you run out of lives —
+every remaining available clue is revealed for free so you can learn what the
+country looked like. The reward is settled first, from the clues you actually
+bought, so those free reveals never reduce what you win.
 
 | Tier | Name      | Clues                                                            | Base Cost |
 | ---- | --------- | ---------------------------------------------------------------- | --------: |

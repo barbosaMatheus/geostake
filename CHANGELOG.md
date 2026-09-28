@@ -4,9 +4,22 @@ All notable changes to GeoStake are documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
-## [0.16.0] - 2026-09-27
+## [1.0.0] - 2026-09-27
+
+### Added
+
+- When a turn ends — the mystery country is guessed correctly, or the player
+  runs out of lives — every remaining available clue is now revealed for free so
+  the player can learn about the country from the finished turn. The reveals
+  cover every tier, never include Lowest Elevation, and never include the
+  Country Outline, which stays hidden from players.
 
 ### Changed
+
+- The reward is settled before the end-of-turn reveal happens, and is calculated
+  from the clues actually purchased during the turn, so the free end-of-turn
+  reveals cannot reduce the payout. A turn solved without buying anything still
+  awards the full reward, and the debug Skip action still reveals nothing.
 
 - Every turn now begins with **two** randomly selected Free-tier clues revealed
   automatically instead of one. Both are revealed for free, neither is recorded
@@ -15,9 +28,12 @@ This project follows [Semantic Versioning](https://semver.org/).
   random pair is drawn for each new turn, and the same clue is never selected
   twice for the same turn. If a country has fewer than two available Free-tier
   clues, every available one is revealed. Purchased-clue behavior is unchanged.
+
 - The saved-game format moved to version 2: `startingClueId` became
   `startingClueIds`. Saves written by the previous version are rejected and read
   as "no saved game" rather than migrated.
+
+[1.0.0]: https://github.com/barbosaMatheus/geostake
 
 ## [0.15.0] - 2026-09-27
 
@@ -41,7 +57,6 @@ This project follows [Semantic Versioning](https://semver.org/).
   National Colors (now tier 2) was purchased. The economy formula and all
   economy configuration values are unchanged.
 
-[0.16.0]: https://github.com/barbosaMatheus/geostake
 [0.15.0]: https://github.com/barbosaMatheus/geostake
 
 ## [0.14.0] - 2026-09-27

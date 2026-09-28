@@ -35,7 +35,7 @@ function CluePanel({
   disabled = false,
   onReveal,
 }: CluePanelProps) {
-  const turnClues = getTurnClues(startingClueIds, CLUES).filter(
+  const turnClues = getTurnClues(revealedClueIds, CLUES).filter(
     (clue) => !isClueHiddenInUi(clue.id),
   )
   const tiers = getClueTiers(turnClues)

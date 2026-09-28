@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { GAME_CONFIG } from '../game/config'
 import { createInitialGameState } from '../game/game'
@@ -190,6 +196,40 @@ describe('GameScreen', () => {
     expect(guessInput).toBeDisabled()
   })
 
+  it('shows every available clue for free once the turn is solved', () => {
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
+    const { guessInput, submitButton } = getGuessControls()
+
+    fireEvent.change(guessInput, { target: { value: TEST_COUNTRIES[0].name } })
+    fireEvent.click(submitButton)
+
+    const cluePanel = within(screen.getByRole('region', { name: 'Clues' }))
+    expect(cluePanel.getByText('Capital')).toBeInTheDocument()
+    expect(cluePanel.getByText('Brasília')).toBeInTheDocument()
+    expect(cluePanel.getByText('South America')).toBeInTheDocument()
+    expect(cluePanel.getByText('Hemisphere')).toBeInTheDocument()
+    expect(cluePanel.queryAllByRole('button')).toHaveLength(0)
+    expect(cluePanel.queryByText('Country Outline')).not.toBeInTheDocument()
+    expect(cluePanel.queryByText('Lowest Elevation')).not.toBeInTheDocument()
+  })
+
+  it('shows every available clue for free when the player runs out of lives', () => {
+    render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
+    const { guessInput, submitButton } = getGuessControls()
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      fireEvent.change(guessInput, { target: { value: 'Atlantis' } })
+      fireEvent.click(submitButton)
+    }
+
+    const cluePanel = within(screen.getByRole('region', { name: 'Clues' }))
+    expect(screen.getByText(/out of lives/i)).toBeInTheDocument()
+    expect(cluePanel.getByText('Capital')).toBeInTheDocument()
+    expect(cluePanel.getByText('Brasília')).toBeInTheDocument()
+    expect(cluePanel.queryAllByRole('button')).toHaveLength(0)
+    expect(screen.getByText('1000')).toBeInTheDocument()
+  })
+
   it('disables clue purchases while a solved turn waits for the next round', () => {
     render(<GameScreen countries={TEST_COUNTRIES} random={alwaysSelectFirst} />)
     const { guessInput, submitButton } = getGuessControls()
@@ -205,9 +245,6 @@ describe('GameScreen', () => {
       screen.getByRole('button', { name: /start next turn/i }),
     ).toBeInTheDocument()
     expect(screen.getByText('South America')).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'Capital · 250 geodes' }),
-    ).toBeDisabled()
     expect(
       screen.getByText(/clue purchases are disabled until the next turn/i),
     ).toBeInTheDocument()
@@ -322,9 +359,6 @@ describe('GameScreen', () => {
       screen.getByRole('button', { name: /start new game/i }),
     ).toBeInTheDocument()
     expect(getGuessControls().guessInput).toBeDisabled()
-    expect(
-      screen.getByRole('button', { name: 'Capital · 250 geodes' }),
-    ).toBeDisabled()
     expect(screen.getByText('950')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /start new game/i }))

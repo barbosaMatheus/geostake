@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { TEST_COUNTRIES } from '../tests/fixtures'
 import type { ClueId } from '../types/clue'
 import type { Country } from '../types/country'
-import { CLUES, getClueDefinition } from './clueConfig'
+import { CLUES, getClueDefinition, isClueHiddenInUi } from './clueConfig'
 import { GAME_CONFIG } from './config'
 import {
   canAffordClue,
@@ -13,6 +13,7 @@ import {
   getTurnClues,
   isClueAvailable,
   revealClue,
+  revealRemainingClues,
   selectStartingClues,
   STARTING_CLUE_COUNT,
 } from './clues'
@@ -39,6 +40,13 @@ function seededRandom(seed: number): () => number {
     state = (state * 1103515245 + 12345) % 2147483648
     return state / 2147483648
   }
+}
+
+/** Every clue the player can be shown for a country, in tier order. */
+function playerFacingAvailableIds(country: Country): readonly ClueId[] {
+  return getAvailableClues(country)
+    .filter((clue) => !isClueHiddenInUi(clue.id))
+    .map((clue) => clue.id)
 }
 
 /** Brazil, but with the retired lowest-elevation fact still present. */
@@ -435,13 +443,89 @@ describe('revealClue', () => {
     expect(next.purchasedClueIds).toEqual(['region'])
   })
 
-  it('does not reveal clues after the turn has been resolved', () => {
-    const state = applyGuess(firstState(), TEST_COUNTRIES[0].name)
-    const next = revealClue(state, 'region')
+  it('does not purchase clues after the turn has been resolved', () => {
+    const resolved = applyGuess(
+      revealClue(firstState(), 'region'),
+      TEST_COUNTRIES[0].name,
+    )
+    const next = revealClue(resolved, 'capital')
 
-    expect(next).toBe(state)
-    expect(next.revealedClueIds).not.toContain('region')
-    expect(next.purchasedClueIds).not.toContain('region')
+    expect(next).toBe(resolved)
+    expect(next.purchasedClueIds).toEqual(['region'])
+    expect(next.player.geodes).toBe(resolved.player.geodes)
+  })
+})
+
+describe('revealRemainingClues', () => {
+  it('reveals every remaining clue available for the country', () => {
+    const next = revealRemainingClues(firstState())
+
+    expect(new Set(next.revealedClueIds)).toEqual(
+      new Set(playerFacingAvailableIds(brazil)),
+    )
+    expect(next.revealedClueIds).toContain('capital')
+    expect(next.revealedClueIds).toContain('region')
+    expect(next.revealedClueIds).toContain('national-colors')
+  })
+
+  it('reveals clues from the free tier and every higher tier', () => {
+    const next = revealRemainingClues(firstState())
+
+    for (const id of next.revealedClueIds) {
+      expect(CLUES.find((clue) => clue.id === id)?.tier).toBeLessThanOrEqual(3)
+    }
+    expect(next.revealedClueIds).toContain('hemisphere')
+    expect(next.revealedClueIds).toContain('population-density')
+  })
+
+  it('costs nothing and never records the reveals as purchased', () => {
+    const state = revealClue(firstState(), 'region')
+    const next = revealRemainingClues(state)
+
+    expect(next.player.geodes).toBe(state.player.geodes)
+    expect(next.purchasedClueIds).toEqual(state.purchasedClueIds)
+    expect(next.purchasedClueIds).not.toContain('capital')
+  })
+
+  it('never reveals a clue that is unavailable for the country', () => {
+    const next = revealRemainingClues(firstState())
+
+    for (const id of [
+      'coastline',
+      'highest-elevation',
+      'internet-country-code',
+      'country-flag',
+    ]) {
+      expect(next.revealedClueIds).not.toContain(id)
+    }
+  })
+
+  it('never reveals the hidden country outline', () => {
+    const japanState = createInitialGameState([japan], GAME_CONFIG, alwaysFirst)
+
+    const next = revealRemainingClues(japanState)
+
+    expect(isClueAvailable('country-outline', japan)).toBe(true)
+    expect(next.revealedClueIds).not.toContain('country-outline')
+    expect(next.revealedClueIds).toContain('country-flag')
+  })
+
+  it('never reveals the retired lowest-elevation clue', () => {
+    const next = revealRemainingClues(
+      createInitialGameState(
+        [countryWithLowestElevation],
+        GAME_CONFIG,
+        alwaysFirst,
+      ),
+    )
+
+    expect(next.revealedClueIds).not.toContain(RETIRED_CLUE_ID)
+  })
+
+  it('leaves a fully revealed state untouched', () => {
+    const revealed = revealRemainingClues(firstState())
+
+    expect(revealRemainingClues(revealed)).toBe(revealed)
   })
 })
 
